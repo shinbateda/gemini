@@ -1,0 +1,1212 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLE & UWB 하이브리드 실시간 위치 측위(RTLS) 시스템</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Noto Sans KR Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons (Via FontAwesome CDN or Inline SVG replacement) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #090d16;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+        /* Glowing effects */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+        .glow-rose {
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-slate-900">
+
+    <!-- Top Bar Navigation / Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-cyan-500 to-emerald-500 p-2.5 rounded-xl text-slate-950 flex items-center justify-center">
+                <i class="fa-solid fa-satellite-dish text-xl animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                    BLE + UWB 하이브리드 RTLS 시뮬레이터
+                    <span class="text-xs bg-slate-800 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded-full font-medium">v1.2</span>
+                </h1>
+                <p class="text-xs text-slate-400">저전력 광역 BLE 탐지 및 안전지대 밀리미터급 UWB 초정밀 동적 트리거 융합</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btn-sound" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-xs transition flex items-center gap-2">
+                <i id="sound-icon" class="fa-solid fa-volume-high text-emerald-400"></i>
+                <span id="sound-text">가청 경보 켬</span>
+            </button>
+            <span class="text-xs text-slate-500 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800/80">
+                시뮬레이션 상태: <strong id="global-status" class="text-emerald-400">정상 가동중</strong>
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-1 grid grid-cols-1 xl:grid-cols-12 p-4 md:p-6 gap-6 max-w-[1700px] w-full mx-auto">
+        
+        <!-- Left Column: Interactive Explanation & Mechanics (xl:col-span-5) -->
+        <section class="xl:col-span-5 flex flex-col gap-6 overflow-y-auto max-h-[calc(100vh-120px)] pr-2">
+            
+            <!-- Hybrid Core Logic Card -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 backdrop-blur">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-emerald-400 text-sm font-bold bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">핵심 원리</span>
+                    <h2 class="text-base font-bold text-slate-100">왜 BLE + UWB 하이브리드인가?</h2>
+                </div>
+                
+                <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                    모든 구역에 UWB 시스템을 갖추는 것은 엄청난 <strong class="text-rose-400 font-semibold">비용 부담</strong>과 스마트 태그의 극심한 <strong class="text-rose-400 font-semibold">배터리 방전</strong> 문제를 초래합니다. 하이브리드 RTLS는 이러한 문제를 해결하기 위해 고안된 가장 진보된 산업 안전 측위 모델입니다.
+                </p>
+
+                <!-- Step-by-step Flow Diagrams with SVG indicators -->
+                <div class="space-y-4 my-4">
+                    <!-- Phase 1 -->
+                    <div class="p-3 bg-slate-950/60 border border-cyan-500/20 rounded-xl flex gap-3 transition hover:border-cyan-500/40">
+                        <div class="flex flex-col items-center">
+                            <span class="w-6 h-6 rounded-full bg-cyan-500 text-slate-950 text-xs flex items-center justify-center font-bold">1</span>
+                            <div class="w-[2px] h-full bg-slate-800 my-1"></div>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-bluetooth"></i> 1단계: 광역 BLE 저전력 스캔 (Zone 분할)
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                작업자는 초기에 <span class="text-cyan-300 font-medium">BLE 비콘 모드(초저전력: 약 15µA)</span>로만 동작합니다. 주변의 저렴한 BLE 수집기가 신호 세기(RSSI)를 측정하여 작업자가 대략 어느 방이나 어느 공구에 속해 있는지 파악합니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Phase 2 -->
+                    <div class="p-3 bg-slate-950/60 border border-yellow-500/20 rounded-xl flex gap-3 transition hover:border-yellow-500/40">
+                        <div class="flex flex-col items-center">
+                            <span class="w-6 h-6 rounded-full bg-yellow-500 text-slate-950 text-xs flex items-center justify-center font-bold">2</span>
+                            <div class="w-[2px] h-full bg-slate-800 my-1"></div>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-yellow-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-bolt"></i> 2단계: UWB Wake-up 하이브리드 트리거
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                작업자가 위험 기계(예: 지게차, 회전 로봇) 근처 또는 <span class="text-yellow-300 font-medium">안전 통제 구역</span>으로 진입하여 BLE RSSI가 설정한 임계치(예: -70dBm) 이상으로 세지면, 수집기에서 태그에게 UWB 전원을 켜라는 무선 명령(BLE Write)을 전송합니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Phase 3 -->
+                    <div class="p-3 bg-slate-950/60 border border-emerald-500/20 rounded-xl flex gap-3 transition hover:border-emerald-500/40">
+                        <div class="flex flex-col items-center">
+                            <span class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 text-xs flex items-center justify-center font-bold">3</span>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-bullseye"></i> 3단계: 초광대역 UWB 고정밀 Ranging 활성화
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                깨어난 태그의 UWB 모듈이 즉각적으로 펄스 비행시간(ToF) 측정을 전개합니다. 주변의 UWB 앵커 4개와 연동하여 <span class="text-emerald-300 font-medium">10cm 단위의 정밀 공간 좌표($x, y, z$)</span>를 산출하며 지게차 충돌을 완벽하게 방어합니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-center mt-3">
+                    <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-400">평상시 (BLE Only)</p>
+                        <p class="text-sm font-bold text-cyan-400 mt-1">배터리 약 3 ~ 5년</p>
+                        <span class="text-[9px] text-slate-500">대기 전류 소비 cực소</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-400">위험 감지 시 (UWB ON)</p>
+                        <p class="text-sm font-bold text-emerald-400 mt-1">10cm급 정밀 방어</p>
+                        <span class="text-[9px] text-slate-500">실시간 SOS 충돌 방지</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Math & Physics Modeling Card -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 backdrop-blur">
+                <h2 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-square-root-variable text-violet-400"></i>
+                    물리적 무선 전파 연산 모델
+                </h2>
+                
+                <div class="space-y-4">
+                    <!-- BLE Mathematical Modeling -->
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-cyan-400">BLE 거리 연산 (RSSI 감쇄법)</span>
+                            <span class="text-[10px] text-slate-500">Log-Distance Path Loss Model</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed mb-2">
+                            신호 세기를 기반으로 거리를 추정할 때 사용되는 로그 경로 손실 방정식입니다:
+                        </p>
+                        <div class="text-center py-2 bg-slate-900 rounded border border-slate-800 my-1">
+                            <code class="text-xs text-slate-200 font-mono">d = 10 ^ ((A - RSSI) / (10 * n))</code>
+                        </div>
+                        <ul class="text-[10px] text-slate-400 space-y-1 mt-1.5 list-disc pl-4">
+                            <li><strong class="text-slate-300">A</strong>: 송신기 기준 1m 지점의 기준 신호 세기 (기본값: -59dBm)</li>
+                            <li><strong class="text-slate-300">RSSI</strong>: 현재 수신된 신호 강도 (장애물, 주머니 속 침범에 감쇄 심함)</li>
+                            <li><strong class="text-slate-300">n</strong>: 무선 전파 감쇄 지수 (현재 슬라이더 조절값: <span id="val-n-indicator" class="text-cyan-400 font-bold">2.0</span>)</li>
+                        </ul>
+                    </div>
+
+                    <!-- UWB Mathematical Modeling -->
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-emerald-400">UWB 거리 연산 (ToF 비행시간법)</span>
+                            <span class="text-[10px] text-slate-500">Time of Flight Method</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed mb-2">
+                            나노초(ns) 급의 임펄스 전파가 송수신되는 물리적인 시간을 직접 측정하여 거리를 계산하므로 장애물 및 전파 왜곡에 완벽하게 대응합니다:
+                        </p>
+                        <div class="text-center py-2 bg-slate-900 rounded border border-slate-800 my-1">
+                            <code class="text-xs text-slate-200 font-mono">d = c * Δt</code>
+                        </div>
+                        <ul class="text-[10px] text-slate-400 space-y-1 mt-1.5 list-disc pl-4">
+                            <li><strong class="text-slate-300">c</strong>: 빛의 속도 ($3 \times 10^8 \text{ m/s}$)</li>
+                            <li><strong class="text-slate-300">Δt</strong>: 송수신 펄스 간의 왕복 시간 차 (나노초 단위 시간 보정 동기화 탑재)</li>
+                            <li><span class="text-emerald-400">특장점</span>: 주머니 차폐나 철제 가림막에도 RSSI 감쇄 영향 없이 일정한 cm급 신뢰도 유지</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controller Settings Panel -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 backdrop-blur">
+                <h2 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-amber-400"></i>
+                    통합 인프라 환경 매개변수 제어
+                </h2>
+                
+                <div class="space-y-4">
+                    <!-- BLE Path-Loss Exponent (N) -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300">BLE 전파 감쇄 지수 (n)</span>
+                            <span id="slider-n-val" class="text-cyan-400 font-bold">2.4</span>
+                        </div>
+                        <input type="range" id="slider-n" min="1.5" max="4.0" step="0.1" value="2.4" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        <div class="flex justify-between text-[9px] text-slate-500 mt-1">
+                            <span>1.5 (개방 야외 무부하)</span>
+                            <span>4.0 (다수 콘크리트 벽 밀집)</span>
+                        </div>
+                    </div>
+
+                    <!-- BLE RSSI UWB Trigger Threshold -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300">UWB 동적 트리거 RSSI 조건 (dBm)</span>
+                            <span id="slider-threshold-val" class="text-yellow-400 font-bold">-68 dBm</span>
+                        </div>
+                        <input type="range" id="slider-threshold" min="-85" max="-50" step="1" value="-68" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-yellow-500">
+                        <div class="flex justify-between text-[9px] text-slate-500 mt-1">
+                            <span>-85 dBm (광역 조기 켜짐)</span>
+                            <span>-50 dBm (안전 코 앞 도달 시 켜짐)</span>
+                        </div>
+                    </div>
+
+                    <!-- Simulator Scenarios Quick Actions -->
+                    <div>
+                        <span class="text-xs text-slate-300 block mb-2">실시간 검증 모의 시나리오</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btn-path-auto" class="px-2 py-1.5 text-[11px] rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-person-walking text-cyan-400"></i>
+                                <span>작업자 자동 순찰</span>
+                            </button>
+                            <button id="btn-incident" class="px-2 py-1.5 text-[11px] rounded bg-rose-950/50 hover:bg-rose-900/50 border border-rose-500/30 text-rose-300 transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-triangle-exclamation text-rose-400 animate-bounce"></i>
+                                <span>지게차 위험 접근 강제 유발</span>
+                            </button>
+                            <button id="btn-pocket" class="px-2 py-1.5 text-[11px] rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition flex items-center justify-center gap-1.5 col-span-2">
+                                <i class="fa-solid fa-shirt text-slate-400"></i>
+                                <span id="pocket-status-text">휴대 모드: 손에 들고 있음 (감쇄 없음)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Interactive Real-Time Simulator Canvas & HUD Dashboard (xl:col-span-7) -->
+        <section class="xl:col-span-7 flex flex-col gap-6">
+            
+            <!-- Real-time Interactive Map / Simulator Card -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 backdrop-blur flex flex-col glow-cyan/10">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-map-location-dot text-cyan-400"></i>
+                            하이브리드 RTLS 실시간 시뮬레이션 필드
+                        </h2>
+                        <p class="text-[11px] text-slate-400">작업자 노드를 드래그하거나 터치하여 수집 영역을 이동시킬 수 있습니다.</p>
+                    </div>
+                    <!-- Legend Indicators -->
+                    <div class="flex flex-wrap gap-3 text-[10px]">
+                        <span class="flex items-center gap-1.5 text-slate-300">
+                            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block ring-2 ring-cyan-400/20"></span> BLE 노드
+                        </span>
+                        <span class="flex items-center gap-1.5 text-slate-300">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block ring-2 ring-emerald-400/20"></span> UWB 앵커
+                        </span>
+                        <span class="flex items-center gap-1.5 text-rose-400 font-semibold">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block animate-ping"></span> 위험 제한 구역
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Simulation Canvas Container -->
+                <div class="relative bg-slate-950/90 border border-slate-800/80 rounded-xl overflow-hidden aspect-[4/3] md:aspect-[16/10] w-full max-h-[500px]">
+                    
+                    <canvas id="rtlsCanvas" class="w-full h-full cursor-grab active:cursor-grabbing block"></canvas>
+                    
+                    <!-- Top HUD Banner Overlay -->
+                    <div class="absolute top-3 left-3 right-3 pointer-events-none flex justify-between gap-3">
+                        <!-- Mode Badge Indicator -->
+                        <div id="badge-tech-state" class="bg-slate-900/90 border border-cyan-500/30 px-3 py-1.5 rounded-lg flex items-center gap-2 backdrop-blur">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                            </span>
+                            <span class="text-xs font-bold text-cyan-400 tracking-wider font-mono">STATE: BLE STANDBY SCANNING</span>
+                        </div>
+                        
+                        <!-- Battery Indicator in HUD -->
+                        <div class="bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 backdrop-blur text-xs">
+                            <i id="battery-hud-icon" class="fa-solid fa-battery-three-quarters text-emerald-400"></i>
+                            <span class="text-slate-300">태그 수명:</span>
+                            <span id="battery-hud-val" class="font-bold text-white font-mono">1524일 대기</span>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Right Indicator -->
+                    <div class="absolute bottom-3 right-3 bg-slate-900/90 border border-slate-800 px-2.5 py-1.5 rounded-md text-[10px] text-slate-400 pointer-events-none backdrop-blur-sm">
+                        <span class="font-mono text-slate-500">Grid unit: 1m x 1m</span>
+                    </div>
+                </div>
+
+                <!-- Live Interaction Hint -->
+                <div class="flex justify-between items-center text-xs text-slate-400 mt-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info text-cyan-400"></i>
+                        <span>위험구역(우측 적색 구역) 및 지게차 주변에 다가서면 태그의 <strong class="text-emerald-400">UWB 모듈이 자동 Wake-up</strong> 됩니다.</span>
+                    </span>
+                    <button id="btn-reset-worker" class="text-cyan-400 hover:text-cyan-300 transition text-[11px] font-bold">
+                        <i class="fa-solid fa-rotate-left"></i> 작업자 위치 리셋
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analytical Dashboard and Real-Time Telemetry -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Accuracy Panel -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs text-slate-400">측위 오차 범위</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="metric-accuracy" class="text-3xl font-extrabold text-cyan-400 tracking-tight font-mono">± 3.4m</span>
+                            <span class="text-xs text-slate-500">오차</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div id="progress-accuracy" class="bg-cyan-500 h-full transition-all duration-300" style="width: 75%"></div>
+                        </div>
+                        <span id="metric-accuracy-desc" class="text-[9px] text-slate-400 mt-1 block">RSSI 세기 가동 변동으로 오차 반경 광범위</span>
+                    </div>
+                </div>
+
+                <!-- Current Consumption Panel -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs text-slate-400">소모 전력 / 소모 전류</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="metric-power" class="text-3xl font-extrabold text-cyan-400 tracking-tight font-mono">15 µA</span>
+                            <span id="metric-power-unit" class="text-xs text-slate-500">수준</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div id="progress-power" class="bg-cyan-500 h-full transition-all duration-300" style="width: 2%"></div>
+                        </div>
+                        <span id="metric-power-desc" class="text-[9px] text-slate-400 mt-1 block">초저전력 BLE 패킷 비상 송출 가동</span>
+                    </div>
+                </div>
+
+                <!-- Active Gateway Count -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs text-slate-400">능동적 연동국 수</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="metric-node-count" class="text-3xl font-extrabold text-cyan-400 tracking-tight font-mono">3 AP</span>
+                            <span class="text-xs text-slate-500">동기화</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div id="progress-node-count" class="bg-cyan-500 h-full transition-all duration-300" style="width: 50%"></div>
+                        </div>
+                        <span id="metric-node-desc" class="text-[9px] text-slate-400 mt-1 block">BLE AP 전원 정상 및 RSSI 분석</span>
+                    </div>
+                </div>
+
+                <!-- Distance to Forklift Collision -->
+                <div id="card-forklift-distance" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-colors">
+                    <div>
+                        <span class="text-xs text-slate-400">지게차 이격 거리</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="metric-forklift-dist" class="text-3xl font-extrabold text-slate-300 tracking-tight font-mono">15.4m</span>
+                            <span class="text-xs text-slate-500">이격</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div id="progress-forklift" class="bg-slate-600 h-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                        <span id="metric-forklift-desc" class="text-[9px] text-slate-400 mt-1 block">충돌 안전 보장 범위 내에 존재함</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal Real-Time Packet Log Stream -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2 backdrop-blur">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-terminal text-slate-400"></i>
+                        실시간 인프라 패킷 로그 스트림 (Telemetry Log)
+                    </span>
+                    <button id="btn-clear-logs" class="text-[10px] text-slate-500 hover:text-slate-300 transition">내역 지우기</button>
+                </div>
+                <!-- Log Container Box -->
+                <div id="log-container" class="bg-slate-950 p-3 rounded-xl border border-slate-800 h-28 overflow-y-auto font-mono text-[10px] text-cyan-400/90 leading-relaxed flex flex-col gap-1">
+                    <!-- Logs generated in JS will go here -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer Description -->
+    <footer class="mt-auto border-t border-slate-800 bg-slate-950/80 p-6 text-center text-xs text-slate-500">
+        <div class="max-w-4xl mx-auto space-y-2">
+            <p>© 2026 하이브리드 산업안전 무선측위 엔지니어링 리소스 패키지</p>
+            <p class="leading-relaxed text-[11px] text-slate-600">
+                본 시뮬레이터는 작업자용 모바일 기기 내부 가중치 필터 알고리즘 설계용 사전 검증 도구입니다. 임계치 변화에 맞추어 태그가 동적 트리거(Sleep → Precision Active)되어 가중치 불확도 구면(Uncertainty Circle)이 급격히 압축 수렴되는 양상을 직관적으로 확인할 수 있습니다.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Script Block containing logical computation, Canvas Drawing Engine and interactive callbacks -->
+    <script>
+        // -------------------------------------------------------------
+        // 1. STATE VARIABLES & CONFIGURATION
+        // -------------------------------------------------------------
+        const canvas = document.getElementById('rtlsCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Dimensions handling for High-DPI screens
+        let scale = window.devicePixelRatio || 1;
+        let cWidth, cHeight;
+
+        // Position coordinates & parameters
+        let worker = {
+            x: 180,
+            y: 250,
+            radius: 12,
+            isDragging: false,
+            targetX: 180,
+            targetY: 250,
+            uncertainty: 120 // BLE default large radius
+        };
+
+        // Static Nodes Deployment Coordinates (representing a 50m x 30m space inside canvas dimensions)
+        const bleAPs = [
+            { id: "AP-01", x: 120, y: 100, label: "BLE AP 1", txPower: -59, active: true },
+            { id: "AP-02", x: 380, y: 120, label: "BLE AP 2", txPower: -59, active: true },
+            { id: "AP-03", x: 220, y: 380, label: "BLE AP 3", txPower: -59, active: true }
+        ];
+
+        const uwbAnchors = [
+            { id: "Anchor-01", x: 450, y: 100, label: "UWB ANCHOR 1" },
+            { id: "Anchor-02", x: 740, y: 100, label: "UWB ANCHOR 2" },
+            { id: "Anchor-03", x: 740, y: 400, label: "UWB ANCHOR 3" },
+            { id: "Anchor-04", x: 450, y: 400, label: "UWB ANCHOR 4" }
+        ];
+
+        // Obstruction Wall (Generates signal attenuation)
+        const concreteWall = {
+            x: 395,
+            y: 50,
+            width: 10,
+            height: 400
+        };
+
+        // Moving Forklift (Dynamic Hazard)
+        let forklift = {
+            x: 595,
+            y: 200,
+            radius: 18,
+            speedY: 1.5,
+            minY: 140,
+            maxY: 360,
+            patrolActive: true
+        };
+
+        // Interactive control variables
+        let nExponent = 2.4; 
+        let uwbThreshold = -68; // dBm threshold
+        let pocketMode = false; // Pocket mode attenuation (+12dBm drop)
+        let autoWalking = false;
+        let soundMuted = false;
+        let isUwbActive = false;
+        let lastLoggedTime = 0;
+        let audioContext = null;
+        let beepCooldown = 0;
+
+        // Auto Walking route index
+        let walkTimer = 0;
+
+        // Real-Time Analytics Cache
+        let trackingAccuracyValue = 3.5;
+        let batteryRemainingDays = 1524;
+        let currentDrawUA = 15; // default 15 microAmps for BLE only
+
+        // -------------------------------------------------------------
+        // 2. INITIALIZATION
+        // -------------------------------------------------------------
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            setupEventHandlers();
+            
+            // Add initial packet console logs
+            addTerminalLog("SYSTEM", "BLE 및 UWB 하이브리드 RTLS 수집 및 분석 관제기 부팅 완료.", "emerald");
+            addTerminalLog("INFRA", "3개소의 광역 BLE 게이트웨이 기동 성공.", "cyan");
+            addTerminalLog("INFRA", "UWB 위험존 제어기(Anchor 1-4) 대기 모드 진입.", "slate");
+
+            // Animation Loop
+            requestAnimationFrame(tick);
+        });
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            cWidth = rect.width;
+            cHeight = rect.height;
+            canvas.width = cWidth * scale;
+            canvas.height = cHeight * scale;
+            ctx.scale(scale, scale);
+        }
+
+        // Initialize Audio Context on demand (due to browser interaction lock)
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playBeep(freq, type, duration) {
+            if (soundMuted) return;
+            initAudio();
+            if (!audioContext) return;
+
+            try {
+                const osc = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq || 440, audioContext.currentTime);
+                
+                gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + duration);
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.error("Audio error: ", e);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 3. EVENT HANDLERS & BINDINGS
+        // -------------------------------------------------------------
+        function setupEventHandlers() {
+            // Slider N
+            const sliderN = document.getElementById('slider-n');
+            const sliderNVal = document.getElementById('slider-n-val');
+            const valNIndicator = document.getElementById('val-n-indicator');
+            sliderN.addEventListener('input', (e) => {
+                nExponent = parseFloat(e.target.value);
+                sliderNVal.innerText = nExponent.toFixed(1);
+                valNIndicator.innerText = nExponent.toFixed(1);
+            });
+
+            // Slider Threshold
+            const sliderTh = document.getElementById('slider-threshold');
+            const sliderThVal = document.getElementById('slider-threshold-val');
+            sliderTh.addEventListener('input', (e) => {
+                uwbThreshold = parseInt(e.target.value);
+                sliderThVal.innerText = uwbThreshold + " dBm";
+            });
+
+            // Mute / Unmute
+            const btnSound = document.getElementById('btn-sound');
+            const soundIcon = document.getElementById('sound-icon');
+            const soundText = document.getElementById('sound-text');
+            btnSound.addEventListener('click', () => {
+                soundMuted = !soundMuted;
+                if (soundMuted) {
+                    soundIcon.className = "fa-solid fa-volume-xmark text-slate-500";
+                    soundText.innerText = "경보음 꺼짐";
+                } else {
+                    initAudio();
+                    soundIcon.className = "fa-solid fa-volume-high text-emerald-400";
+                    soundText.innerText = "가청 경보 켬";
+                    playBeep(600, 'sine', 0.1);
+                }
+            });
+
+            // Clear Log
+            document.getElementById('btn-clear-logs').addEventListener('click', () => {
+                document.getElementById('log-container').innerHTML = '';
+            });
+
+            // Pocket Mode Toggle
+            const btnPocket = document.getElementById('btn-pocket');
+            const pocketText = document.getElementById('pocket-status-text');
+            btnPocket.addEventListener('click', () => {
+                pocketMode = !pocketMode;
+                if (pocketMode) {
+                    btnPocket.className = "px-2 py-1.5 text-[11px] rounded bg-yellow-950/40 hover:bg-yellow-900/40 border border-yellow-500/30 text-yellow-300 transition flex items-center justify-center gap-1.5 col-span-2 shadow-inner";
+                    pocketText.innerHTML = `<i class="fa-solid fa-shirt text-yellow-400"></i> 휴대 모드: 바지 주머니 안 (신호 -12dBm 추가 감쇄)`;
+                    addTerminalLog("TAG", "감전 및 수분 인체 차폐로 인한 BLE RSSI 급격 감쇄 모의 시작.", "yellow");
+                } else {
+                    btnPocket.className = "px-2 py-1.5 text-[11px] rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition flex items-center justify-center gap-1.5 col-span-2";
+                    pocketText.innerHTML = `<i class="fa-solid fa-shirt text-slate-400"></i> 휴대 모드: 손에 들고 있음 (감쇄 없음)`;
+                    addTerminalLog("TAG", "인체 장해 요인 해제. 자유 공간 무선 통정 회복.", "cyan");
+                }
+            });
+
+            // Auto-walk Toggle
+            const btnWalk = document.getElementById('btn-path-auto');
+            btnWalk.addEventListener('click', () => {
+                autoWalking = !autoWalking;
+                if (autoWalking) {
+                    btnWalk.classList.add('bg-cyan-950/50', 'border-cyan-500/30', 'text-cyan-300');
+                    addTerminalLog("CORE", "작업자 정기 시설 순찰 순회 경로 자동화 구동.", "cyan");
+                } else {
+                    btnWalk.classList.remove('bg-cyan-950/50', 'border-cyan-500/30', 'text-cyan-300');
+                    addTerminalLog("CORE", "작업자 자유 동선 수동 조작 상태 회귀.", "slate");
+                }
+            });
+
+            // Trigger Incident Command (Force Hazard approach)
+            document.getElementById('btn-incident').addEventListener('click', () => {
+                autoWalking = false;
+                btnWalk.classList.remove('bg-cyan-950/50', 'border-cyan-500/30', 'text-cyan-300');
+                
+                // Warp worker right near forklift
+                worker.x = forklift.x - 35;
+                worker.y = forklift.y + 15;
+                addTerminalLog("INCIDENT", "모의 지게차 충돌 비상 상황 강제 기동!", "rose");
+                playBeep(880, 'sawtooth', 0.3);
+            });
+
+            // Reset Worker
+            document.getElementById('btn-reset-worker').addEventListener('click', () => {
+                autoWalking = false;
+                btnWalk.classList.remove('bg-cyan-950/50', 'border-cyan-500/30', 'text-cyan-300');
+                worker.x = 180;
+                worker.y = 250;
+                addTerminalLog("CORE", "작업자 시작 대기 지점으로 재정렬.", "slate");
+            });
+
+            // Canvas Interaction (Mouse)
+            canvas.addEventListener('mousedown', (e) => {
+                const clickPos = getCanvasCoords(e);
+                if (getDistance(clickPos.x, clickPos.y, worker.x, worker.y) < worker.radius + 15) {
+                    worker.isDragging = true;
+                    autoWalking = false;
+                    btnWalk.classList.remove('bg-cyan-950/50', 'border-cyan-500/30', 'text-cyan-300');
+                    initAudio();
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (worker.isDragging) {
+                    const dragPos = getCanvasCoords(e);
+                    // Constraint within field boundary
+                    worker.x = Math.max(20, Math.min(cWidth - 20, dragPos.x));
+                    worker.y = Math.max(20, Math.min(cHeight - 20, dragPos.y));
+                }
+            });
+
+            canvas.addEventListener('mouseup', () => { worker.isDragging = false; });
+            canvas.addEventListener('mouseleave', () => { worker.isDragging = false; });
+
+            // Touch support for mobile devices
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    const clickPos = getCanvasCoords(touch);
+                    if (getDistance(clickPos.x, clickPos.y, worker.x, worker.y) < worker.radius + 25) {
+                        worker.isDragging = true;
+                        autoWalking = false;
+                        btnWalk.classList.remove('bg-cyan-950/50', 'border-cyan-500/30', 'text-cyan-300');
+                        initAudio();
+                        e.preventDefault(); // prevent scrolling while dragging
+                    }
+                }
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (worker.isDragging && e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    const dragPos = getCanvasCoords(touch);
+                    worker.x = Math.max(20, Math.min(cWidth - 20, dragPos.x));
+                    worker.y = Math.max(20, Math.min(cHeight - 20, dragPos.y));
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', () => { worker.isDragging = false; });
+        }
+
+        function getCanvasCoords(eventOrTouch) {
+            const rect = canvas.getBoundingClientRect();
+            // Works for both mouse and touch
+            return {
+                x: eventOrTouch.clientX - rect.left,
+                y: eventOrTouch.clientY - rect.top
+            };
+        }
+
+        function getDistance(x1, y1, x2, y2) {
+            return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        }
+
+        // -------------------------------------------------------------
+        // 4. COMPUTATIONS & TELEMETRY ENGINE
+        // -------------------------------------------------------------
+        function evaluateTelemetry() {
+            // Determine active distance to the forklift
+            const forkliftDistPix = getDistance(worker.x, worker.y, forklift.x, forklift.y);
+            const physicalForkliftDist = (forkliftDistPix / 15).toFixed(1); // 15px = 1m calibration scale
+            
+            // Logically evaluate nearest BLE RSSIs to determine trigger state
+            let strongestRSSI = -120;
+            let nearestAP = null;
+
+            bleAPs.forEach(ap => {
+                let dist = getDistance(worker.x, worker.y, ap.x, ap.y);
+                // Obstacle wall attenuation checking
+                let rawAttenuation = nExponent;
+                if (crossesObstacleWall(worker.x, worker.y, ap.x, ap.y)) {
+                    rawAttenuation += 1.5; // Concrete wall heavily degrades signal
+                }
+                
+                // Convert pixel distance to meters
+                let distMeters = Math.max(0.8, dist / 15);
+                // RSSI calculation based on standard Log-Distance path-loss
+                let calculatedRSSI = ap.txPower - 10 * rawAttenuation * Math.log10(distMeters);
+                
+                if (pocketMode) {
+                    calculatedRSSI -= 12; // Extra pocket attenuation
+                }
+
+                // Add small dynamic noise fluctuation
+                calculatedRSSI += (Math.random() - 0.5) * 3;
+                calculatedRSSI = Math.round(calculatedRSSI);
+
+                if (calculatedRSSI > strongestRSSI) {
+                    strongestRSSI = calculatedRSSI;
+                    nearestAP = ap;
+                }
+            });
+
+            // Decide whether UWB is activated
+            // High-precision safety trigger zone starts at X > 420, OR when forklift is very close (< 6 meters)
+            const insideHazardZone = worker.x > 420;
+            const thresholdExceeded = strongestRSSI > uwbThreshold;
+            const targetUwbState = insideHazardZone || (physicalForkliftDist < 6.0);
+
+            // Trigger State Changes
+            if (targetUwbState !== isUwbActive) {
+                isUwbActive = targetUwbState;
+                triggerStateTransition(strongestRSSI);
+            }
+
+            // Real-time telemetry metric mapping
+            const accuracyElem = document.getElementById('metric-accuracy');
+            const progressAccuracy = document.getElementById('progress-accuracy');
+            const accuracyDesc = document.getElementById('metric-accuracy-desc');
+            const powerElem = document.getElementById('metric-power');
+            const progressPower = document.getElementById('progress-power');
+            const powerDesc = document.getElementById('metric-power-desc');
+            const powerUnit = document.getElementById('metric-power-unit');
+            const badgeTechState = document.getElementById('badge-tech-state');
+            const nodeCountElem = document.getElementById('metric-node-count');
+            const nodeCountDesc = document.getElementById('metric-node-desc');
+            const forkliftDistElem = document.getElementById('metric-forklift-dist');
+            const cardForkliftDistance = document.getElementById('card-forklift-distance');
+            const progressForklift = document.getElementById('progress-forklift');
+
+            // Sound feedback for hazard alerts
+            if (isUwbActive && physicalForkliftDist < 3.0) {
+                cardForkliftDistance.className = "bg-rose-950/60 border border-rose-500 rounded-2xl p-4 flex flex-col justify-between transition-colors animate-pulse";
+                beepCooldown--;
+                if (beepCooldown <= 0) {
+                    // Rapid alert sound
+                    playBeep(980, 'sine', 0.08);
+                    playBeep(1400, 'sine', 0.05);
+                    beepCooldown = 15; // frame limit tick
+                }
+            } else if (isUwbActive && physicalForkliftDist < 6.0) {
+                cardForkliftDistance.className = "bg-amber-950/60 border border-amber-500 rounded-2xl p-4 flex flex-col justify-between transition-colors";
+                beepCooldown--;
+                if (beepCooldown <= 0) {
+                    playBeep(650, 'sine', 0.1);
+                    beepCooldown = 40;
+                }
+            } else {
+                cardForkliftDistance.className = "bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-colors";
+            }
+
+            // UI updates
+            forkliftDistElem.innerText = physicalForkliftDist + "m";
+            const percentForklift = Math.min(100, Math.max(0, (physicalForkliftDist / 20) * 100));
+            progressForklift.style.width = percentForklift + "%";
+
+            if (isUwbActive) {
+                // Precise stats under UWB tracking
+                trackingAccuracyValue = 0.1 + (Math.random() * 0.12); // Steady at 10-22cm
+                currentDrawUA = 120; // 120mA draw while actively pinging
+                batteryRemainingDays = 45; // Depletes within ~1.5 months if permanently on
+
+                badgeTechState.className = "bg-emerald-950/90 border border-emerald-500/50 px-3 py-1.5 rounded-lg flex items-center gap-2 backdrop-blur";
+                badgeTechState.innerHTML = `
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-xs font-bold text-emerald-400 tracking-wider font-mono">STATE: UWB PRECISION RANGING</span>
+                `;
+
+                accuracyElem.innerText = `± ${(trackingAccuracyValue * 100).toFixed(0)}cm`;
+                accuracyElem.className = "text-3xl font-extrabold text-emerald-400 tracking-tight font-mono";
+                progressAccuracy.className = "bg-emerald-500 h-full transition-all duration-300";
+                progressAccuracy.style.width = "94%";
+                accuracyDesc.innerText = "ToF 측정에 의한 초정밀 실시간 측위 실현";
+
+                powerElem.innerText = "120";
+                powerUnit.innerText = "mA";
+                powerElem.className = "text-3xl font-extrabold text-rose-400 tracking-tight font-mono";
+                progressPower.className = "bg-rose-500 h-full transition-all duration-300";
+                progressPower.style.width = "90%";
+                powerDesc.innerText = "UWB 고전류 임펄스 증폭 가동으로 배터리 격렬 소모";
+
+                document.getElementById('battery-hud-icon').className = "fa-solid fa-battery-quarter text-rose-500 animate-pulse";
+                document.getElementById('battery-hud-val').innerText = `${batteryRemainingDays}일 (초비상)`;
+
+                nodeCountElem.innerText = "4 Anchor";
+                progressNodeCount.style.width = "90%";
+                nodeCountDesc.innerText = "ToF 삼각망 완전 구조 성립 (가시선 확보)";
+
+                // Generate random frame payload telemetry logs occasionally
+                if (Date.now() - lastLoggedTime > 2500) {
+                    addTerminalLog("UWB", `Ranging Anchor 1-4. TOF: ${(Math.random() * 5 + 10).toFixed(2)}ns. Estimated precision: ${(trackingAccuracyValue * 100).toFixed(1)}cm`, "emerald");
+                    lastLoggedTime = Date.now();
+                }
+            } else {
+                // Raw Coarse statistics under BLE tracking
+                trackingAccuracyValue = 1.5 + (Math.random() * 2.8) + (pocketMode ? 1.5 : 0);
+                currentDrawUA = 15; // Minimal 15µA standby
+                batteryRemainingDays = pocketMode ? 1420 : 1524;
+
+                badgeTechState.className = "bg-slate-900/90 border border-cyan-500/30 px-3 py-1.5 rounded-lg flex items-center gap-2 backdrop-blur";
+                badgeTechState.innerHTML = `
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                    </span>
+                    <span class="text-xs font-bold text-cyan-400 tracking-wider font-mono">STATE: BLE STANDBY SCANNING</span>
+                `;
+
+                accuracyElem.innerText = `± ${trackingAccuracyValue.toFixed(1)}m`;
+                accuracyElem.className = "text-3xl font-extrabold text-cyan-400 tracking-tight font-mono";
+                progressAccuracy.className = "bg-cyan-500 h-full transition-all duration-300";
+                // low accuracy translates to smaller progress bar width here
+                progressAccuracy.style.width = `${Math.max(10, 100 - (trackingAccuracyValue * 15))}%`;
+                accuracyDesc.innerText = `가까운 AP [${nearestAP ? nearestAP.id : 'N/A'}] RSSI: ${strongestRSSI}dBm 기준 추론`;
+
+                powerElem.innerText = "15";
+                powerUnit.innerText = "µA";
+                powerElem.className = "text-3xl font-extrabold text-cyan-400 tracking-tight font-mono";
+                progressPower.className = "bg-cyan-500 h-full transition-all duration-300";
+                progressPower.style.width = "5%";
+                powerDesc.innerText = "초저전력 BLE 수개월-수년형 배터리 보존 대기 상태";
+
+                document.getElementById('battery-hud-icon').className = "fa-solid fa-battery-three-quarters text-emerald-400";
+                document.getElementById('battery-hud-val').innerText = `${batteryRemainingDays}일 대기`;
+
+                nodeCountElem.innerText = "3 AP";
+                progressNodeCount.style.width = "50%";
+                nodeCountDesc.innerText = "BLE 수집 패킷 다각도 추이 정상 측정 중";
+
+                if (Date.now() - lastLoggedTime > 3500) {
+                    addTerminalLog("BLE", `Broadcasting Adv Packet. UUID: 7e2f... RSSI: ${strongestRSSI}dBm via AP: ${nearestAP ? nearestAP.id : 'none'}`, "cyan");
+                    lastLoggedTime = Date.now();
+                }
+            }
+        }
+
+        // Check if the signal path intersects the virtual concrete wall
+        function crossesObstacleWall(x1, y1, x2, y2) {
+            const wx = concreteWall.x;
+            const wy1 = concreteWall.y;
+            const wy2 = concreteWall.y + concreteWall.height;
+            
+            // Checking simple line intersection with the vertical wall
+            if ((x1 < wx && x2 > wx) || (x1 > wx && x2 < wx)) {
+                // Calculate Y at intersection point
+                let slope = (y2 - y1) / (x2 - x1);
+                let yIntersect = y1 + slope * (wx - x1);
+                return yIntersect >= wy1 && yIntersect <= wy2;
+            }
+            return false;
+        }
+
+        function triggerStateTransition(currentRSSI) {
+            if (isUwbActive) {
+                addTerminalLog("TRIGGER", `임계 조건 돌파! BLE RSSI: ${currentRSSI}dBm. >>> UWB 칩셋 즉각 Wake-up 원격 명령 투사 <<<`, "yellow");
+                playBeep(700, 'sine', 0.15);
+                setTimeout(() => { playBeep(1100, 'sine', 0.1); }, 100);
+            } else {
+                addTerminalLog("TRIGGER", "위험 구역 이격 확인. UWB 칩셋 Deep Sleep 회귀 (배터리 보존 우선 모드 가동)", "slate");
+                playBeep(400, 'sine', 0.15);
+                setTimeout(() => { playBeep(300, 'sine', 0.15); }, 100);
+            }
+        }
+
+        function addTerminalLog(tag, msg, colorClass) {
+            const container = document.getElementById('log-container');
+            const timeStr = new Date().toTimeString().split(' ')[0];
+            
+            let colorCode = "text-slate-400";
+            if (colorClass === "cyan") colorCode = "text-cyan-400";
+            if (colorClass === "emerald") colorCode = "text-emerald-400";
+            if (colorClass === "yellow") colorCode = "text-yellow-400";
+            if (colorClass === "rose") colorCode = "text-rose-400";
+            if (colorClass === "violet") colorCode = "text-violet-400";
+
+            container.innerHTML += `<div class="mb-1"><span class="text-slate-600">[${timeStr}]</span> <span class="font-bold border border-${colorClass}-500/20 px-1 py-[1px] rounded bg-slate-900/60 ${colorCode}">[${tag}]</span> <span class="text-slate-300">${msg}</span></div>`;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // -------------------------------------------------------------
+        // 5. CANVAS RENDERING ENGINE
+        // -------------------------------------------------------------
+        function tick(timestamp) {
+            updatePhysics();
+            evaluateTelemetry();
+            drawField();
+            requestAnimationFrame(tick);
+        }
+
+        function updatePhysics() {
+            // Auto Walk Simulation Logic
+            if (autoWalking) {
+                walkTimer += 0.01;
+                // Complex path weaving left & right zones
+                worker.x = 280 + Math.sin(walkTimer * 0.7) * 220 + Math.cos(walkTimer * 1.5) * 30;
+                worker.y = 250 + Math.cos(walkTimer * 0.5) * 120;
+            }
+
+            // Forklift patrol movement
+            if (forklift.patrolActive) {
+                forklift.y += forklift.speedY;
+                if (forklift.y > forklift.maxY || forklift.y < forklift.minY) {
+                    forklift.speedY = -forklift.speedY; // reverse path
+                }
+            }
+        }
+
+        function drawField() {
+            // Clear Frame
+            ctx.fillStyle = '#060a12';
+            ctx.fillRect(0, 0, cWidth, cHeight);
+
+            // 1. Draw Grid Lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+            const gridSpacing = 25;
+            for (let x = 0; x < cWidth; x += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, cHeight);
+                ctx.stroke();
+            }
+            for (let y = 0; y < cHeight; y += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(cWidth, y);
+                ctx.stroke();
+            }
+
+            // 2. Draw Floor Zones (Left BLE and Right Hybrid)
+            // Left Zone: General Area
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.01)';
+            ctx.fillRect(0, 0, 400, cHeight);
+            
+            // Right Zone: High Precision Hazard Area
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.02)';
+            ctx.fillRect(400, 0, cWidth - 400, cHeight);
+
+            // Dividing border
+            ctx.setLineDash([4, 8]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.beginPath();
+            ctx.moveTo(400, 0);
+            ctx.lineTo(400, cHeight);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Zone Labels
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.5)';
+            ctx.fillText('일반 보존 구역 (저전력 BLE 상시 대기)', 25, 45);
+
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.6)';
+            ctx.fillText('초정밀 위험통제 구역 (BLE + UWB 하이브리드)', 425, 45);
+
+            // 3. Draw Concrete Attenuation Wall
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.fillRect(concreteWall.x, concreteWall.y, concreteWall.width, concreteWall.height);
+            ctx.strokeRect(concreteWall.x, concreteWall.y, concreteWall.width, concreteWall.height);
+            
+            // Wall Label
+            ctx.save();
+            ctx.translate(concreteWall.x + 18, concreteWall.y + 190);
+            ctx.rotate(Math.PI / 2);
+            ctx.font = 'bold 9px sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('신호 감쇠 벽체 (콘크리트 250mm)', 0, 0);
+            ctx.restore();
+
+            // 4. Draw BLE Access Points (Cyan Node Icons)
+            bleAPs.forEach(ap => {
+                // Wave propagation circles
+                const waveRadius = (Date.now() / 25) % 150;
+                ctx.strokeStyle = `rgba(6, 182, 212, ${1.0 - (waveRadius / 150)})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(ap.x, ap.y, waveRadius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Core anchor point
+                ctx.shadowColor = '#06b6d4';
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = '#06b6d4';
+                ctx.beginPath();
+                ctx.arc(ap.x, ap.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0; // reset shadow
+
+                // Inner core ring
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(ap.x, ap.y, 4, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Label Text
+                ctx.font = '9px monospace';
+                ctx.fillStyle = '#22d3ee';
+                ctx.fillText(ap.id, ap.x - 18, ap.y - 14);
+            });
+
+            // 5. Draw UWB Anchors (Emerald Shield Nodes - Only highlighted if UWB is active)
+            uwbAnchors.forEach(anchor => {
+                // Outer glow if active
+                if (isUwbActive) {
+                    const waveRadius = (Date.now() / 20) % 120;
+                    ctx.strokeStyle = `rgba(16, 185, 129, ${0.8 - (waveRadius / 120)})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(anchor.x, anchor.y, waveRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                ctx.shadowColor = '#10b981';
+                ctx.shadowBlur = isUwbActive ? 12 : 2;
+                ctx.fillStyle = isUwbActive ? '#10b981' : '#1e293b';
+                
+                // Draw square/diamond anchor representing dedicated high-performance module
+                ctx.beginPath();
+                ctx.rect(anchor.x - 6, anchor.y - 6, 12, 12);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(anchor.x - 4, anchor.y - 4, 8, 8);
+
+                ctx.font = '9px monospace';
+                ctx.fillStyle = isUwbActive ? '#34d399' : '#64748b';
+                ctx.fillText(anchor.id, anchor.x - 22, anchor.y - 14);
+            });
+
+            // 6. Draw Danger Zone (Forklift Path Area)
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.05)';
+            ctx.strokeStyle = 'rgba(244, 63, 94, 0.15)';
+            ctx.lineWidth = 2.5;
+            // Rounded danger box surrounding forklift action area
+            ctx.fillRect(490, 120, 210, 260);
+            ctx.strokeRect(490, 120, 210, 260);
+            
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.4)';
+            ctx.font = 'bold 9px sans-serif';
+            ctx.fillText('⚠️ 중장비 가동 한계 구역', 530, 138);
+
+            // 7. Draw Forklift
+            ctx.shadowColor = '#f43f5e';
+            ctx.shadowBlur = (isUwbActive && getDistance(worker.x, worker.y, forklift.x, forklift.y) < 90) ? 15 : 0;
+            ctx.fillStyle = '#f43f5e';
+            
+            // Draw custom forklift shape using primitives
+            ctx.beginPath();
+            ctx.arc(forklift.x, forklift.y, forklift.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Forklift Inner details (Industrial yellow/orange core)
+            ctx.fillStyle = '#fb923c';
+            ctx.fillRect(forklift.x - 12, forklift.y - 8, 20, 16);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(forklift.x + 8, forklift.y - 12, 4, 24); // Forks represent steel arm
+
+            // Active Alert Circle around Forklift (2 meter radius equivalent in pixels)
+            ctx.strokeStyle = 'rgba(244, 63, 94, 0.4)';
+            ctx.setLineDash([3, 5]);
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(forklift.x, forklift.y, 45, 0, Math.PI * 2); // 3m boundary
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.font = 'bold 9px sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('지게차', forklift.x - 13, forklift.y + 4);
+
+            // 8. Draw Ranging Vector Lines (From Anchors or APs to Tag based on active tech)
+            if (isUwbActive) {
+                uwbAnchors.forEach(anchor => {
+                    ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(anchor.x, anchor.y);
+                    ctx.lineTo(worker.x, worker.y);
+                    ctx.stroke();
+
+                    // Tiny distance tags
+                    const midX = (anchor.x + worker.x) / 2;
+                    const midY = (anchor.y + worker.y) / 2;
+                    const realDist = (getDistance(anchor.x, anchor.y, worker.x, worker.y) / 15).toFixed(2);
+                    
+                    ctx.fillStyle = '#060a12';
+                    ctx.fillRect(midX - 22, midY - 7, 44, 13);
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(midX - 22, midY - 7, 44, 13);
+                    
+                    ctx.fillStyle = '#34d399';
+                    ctx.font = '8px monospace';
+                    ctx.fillText(`${realDist}m`, midX - 18, midY + 3);
+                });
+            } else {
+                // BLE Signal estimation drawing (Connects only to strongest AP or all APs)
+                bleAPs.forEach(ap => {
+                    ctx.strokeStyle = 'rgba(6, 182, 212, 0.15)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(ap.x, ap.y);
+                    ctx.lineTo(worker.x, worker.y);
+                    ctx.stroke();
+                });
+            }
+
+            // 9. Draw Worker Tag (Draggable Dot)
+            // Uncertainty boundary circle represent the estimated positioning error range
+            let errorBoundRadius = trackingAccuracyValue * 15; // 15px per meter ratio
+            
+            ctx.fillStyle = isUwbActive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(6, 182, 212, 0.15)';
+            ctx.strokeStyle = isUwbActive ? '#10b981' : '#06b6d4';
+            ctx.lineWidth = 1.5;
+            
+            ctx.beginPath();
+            ctx.arc(worker.x, worker.y, errorBoundRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Tag Core
+            ctx.shadowColor = isUwbActive ? '#10b981' : '#06b6d4';
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(worker.x, worker.y, worker.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Tech center dot indicator
+            ctx.fillStyle = isUwbActive ? '#10b981' : '#06b6d4';
+            ctx.beginPath();
+            ctx.arc(worker.x, worker.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Label worker
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('작업자(태그)', worker.x - 30, worker.y + 26);
+        }
+
+        // Helper progress updater (Ensures standalone fallback safety)
+        const progressNodeCount = document.getElementById('progress-node-count');
+
+    </script>
+</body>
+</html>
+  

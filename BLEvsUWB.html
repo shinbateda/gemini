@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTLS 실시간 위치 추적 및 엔지니어링 대시보드</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+        /* Custom Custom Scrollbar for Terminal & Panels */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        /* Pulse Animation for Danger Zones */
+        @keyframes pulse-danger {
+            0%, 100% { opacity: 0.15; }
+            50% { opacity: 0.35; }
+        }
+        .danger-pulse {
+            animation: pulse-danger 2s infinite ease-in-out;
+        }
+        /* Ping Animation for SOS */
+        @keyframes sos-ping {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+        .sos-ring {
+            animation: sos-ping 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-indigo-600 rounded-xl shadow-md shadow-indigo-900/30">
+                <i class="fa-solid fa-satellite-dish text-2xl text-white animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                    RTLS <span class="text-indigo-400 font-medium">산업용 실시간 위치 추적 시스템</span>
+                </h1>
+                <p class="text-xs text-slate-400">작업자 안전 관리 및 무선 하드웨어 엔지니어링 시뮬레이터</p>
+            </div>
+        </div>
+        
+        <!-- Tab Navigation Menu -->
+        <nav class="flex bg-slate-950/80 p-1.5 rounded-xl border border-slate-800/80">
+            <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-white bg-indigo-600 shadow-sm">
+                <i class="fa-solid fa-map-location-dot mr-2"></i>모니터링 맵
+            </button>
+            <button onclick="switchTab('spec')" id="btn-tab-spec" class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-layer-group mr-2"></i>기술비교 & 구조
+            </button>
+            <button onclick="switchTab('device')" id="btn-tab-device" class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-mobile-screen-button mr-2"></i>단말 호환성
+            </button>
+            <button onclick="switchTab('budget')" id="btn-tab-budget" class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-calculator mr-2"></i>예산 계산기
+            </button>
+        </nav>
+    </header>
+
+    <!-- MAIN BODY CONTAINER -->
+    <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- 1. DASHBOARD TAB -->
+        <section id="tab-dashboard" class="space-y-6">
+            <!-- Dashboard Stats & Fast Toggle -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">추적 엔진 모드</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="active-mode-badge" class="text-lg font-bold text-emerald-400">UWB (정밀형)</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                        <button onclick="setRTLSMode('BLE')" id="mode-ble-btn" class="px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400">BLE</button>
+                        <button onclick="setRTLSMode('UWB')" id="mode-uwb-btn" class="px-3 py-1 text-xs font-semibold rounded-md transition-all bg-emerald-500 text-slate-950 shadow-sm font-bold">UWB</button>
+                    </div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4 shadow-sm">
+                    <div class="p-3 bg-indigo-500/10 rounded-lg text-indigo-400">
+                        <i class="fa-solid fa-users text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">모니터링 대상 인원</p>
+                        <h3 class="text-2xl font-bold mt-0.5" id="stat-worker-count">5 명</h3>
+                    </div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4 shadow-sm">
+                    <div class="p-3 bg-amber-500/10 rounded-lg text-amber-400">
+                        <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">위험지대 진입자</p>
+                        <h3 class="text-2xl font-bold mt-0.5 text-amber-400 animate-pulse" id="stat-warning-count">0 명</h3>
+                    </div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4 shadow-sm">
+                    <div class="p-3 bg-red-500/10 rounded-lg text-red-400">
+                        <i class="fa-solid fa-heart-pulse text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">SOS 긴급 신호</p>
+                        <h3 class="text-2xl font-bold mt-0.5 text-slate-400" id="stat-sos-count">정상 (0)</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tracker Layout Split Screen -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- 2D Simulation Area (Left - 8 Cols) -->
+                <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-4 shadow-md overflow-hidden">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></span>
+                            <h2 class="text-base font-bold text-white">현장 실시간 2D 위치 맵 (시뮬레이터)</h2>
+                        </div>
+                        <div class="text-xs text-slate-400 flex gap-4">
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-amber-500/30 border border-amber-500 rounded-sm"></span>제1위험 구역</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-rose-500/30 border border-rose-500 rounded-sm"></span>제2위험 구역</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Wrapper -->
+                    <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden group">
+                        <canvas id="rtlsCanvas" class="absolute inset-0 w-full h-full cursor-pointer"></canvas>
+                        
+                        <!-- Mini Overlay Hint -->
+                        <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur border border-slate-800 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 pointer-events-none">
+                            💡 작업자 원 노드를 <strong>클릭</strong>하면 상세 무선 스펙과 실시간 수신 신호 수치가 반영됩니다.
+                        </div>
+                    </div>
+
+                    <!-- Canvas Controls -->
+                    <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+                        <div class="flex gap-2">
+                            <button onclick="triggerRandomSOS()" class="bg-rose-600 hover:bg-rose-500 active:scale-95 transition-all text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5">
+                                <i class="fa-solid fa-triangle-exclamation animate-bounce"></i> 무작위 SOS 발생
+                            </button>
+                            <button onclick="resetSimulation()" class="bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> 시뮬레이션 리셋
+                            </button>
+                        </div>
+                        <div class="text-xs text-slate-400 flex items-center gap-2">
+                            <span>시뮬레이션 배율:</span>
+                            <span class="font-bold text-slate-200">1px = 0.05m (실제 거리)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Status & Config Panel (Right - 4 Cols) -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <!-- Dynamic Detail Panel -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-md flex-1 flex flex-col justify-between min-h-[380px]">
+                        <div>
+                            <div class="flex justify-between items-start pb-4 border-b border-slate-800">
+                                <div>
+                                    <h3 class="font-bold text-lg text-white" id="panel-worker-name">대상 미지정</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5" id="panel-worker-dept">인물을 맵에서 선택해 주세요</p>
+                                </div>
+                                <span class="bg-indigo-500/10 text-indigo-400 px-2 py-1 text-xs rounded-md font-semibold" id="panel-worker-id">ID: -</span>
+                            </div>
+
+                            <!-- Spec Metrics -->
+                            <div class="space-y-4 mt-5">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-850">
+                                        <span class="text-[10px] text-slate-400 block font-medium uppercase">실시간 좌표 (X, Y)</span>
+                                        <span class="text-sm font-bold text-slate-200 mt-1 block" id="panel-worker-coords">0.0m, 0.0m</span>
+                                    </div>
+                                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-850">
+                                        <span class="text-[10px] text-slate-400 block font-medium uppercase">디바이스 배터리</span>
+                                        <span class="text-sm font-bold text-emerald-400 mt-1 block flex items-center gap-1.5" id="panel-worker-battery">
+                                            <i class="fa-solid fa-battery-three-quarters"></i> -- %
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic signal indicator -->
+                                <div class="bg-slate-950 p-3.5 rounded-lg border border-slate-850 space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs text-slate-400 font-semibold" id="signal-title-type">UWB (ToF 전파거리 측정)</span>
+                                        <span class="text-xs font-mono font-bold text-emerald-400" id="signal-value-badge">0.00 ns</span>
+                                    </div>
+                                    <!-- Signal progress visualizer -->
+                                    <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                                        <div id="signal-strength-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 75%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-[10px] text-slate-500">
+                                        <span id="signal-metric-min">최단시간: 0ns</span>
+                                        <span id="signal-metric-max">최장시간: 150ns</span>
+                                    </div>
+                                </div>
+
+                                <!-- Error margin / accuracy badge -->
+                                <div class="bg-slate-950 p-3.5 rounded-lg border border-slate-850 flex justify-between items-center">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 block font-medium">설정 엔진 오차 반경</span>
+                                        <span class="text-xs font-semibold text-slate-300 mt-0.5" id="panel-accuracy-title">UWB 고정밀 국한</span>
+                                    </div>
+                                    <span class="bg-emerald-500/10 text-emerald-400 px-2.5 py-1 text-sm font-extrabold rounded-md border border-emerald-500/20" id="panel-accuracy-val">± 0.2m</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel SOS Controls -->
+                        <div class="pt-4 border-t border-slate-800 mt-6 flex gap-2">
+                            <button id="btn-panel-sos" onclick="triggerSelectedSOS()" disabled class="flex-1 bg-red-600/40 text-slate-400 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-not-allowed">
+                                <i class="fa-solid fa-hospital-user"></i> 대상 선택 필요
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Geofence & System Terminal Logs -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex flex-col h-[200px]">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-800 mb-2">
+                            <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                                <i class="fa-solid fa-terminal text-indigo-400"></i> 실시간 관제 시스템 로그
+                            </span>
+                            <button onclick="clearConsole()" class="text-[10px] text-slate-400 hover:text-slate-200">
+                                <i class="fa-solid fa-trash-can mr-1"></i>비우기
+                            </button>
+                        </div>
+                        <div id="console-stream" class="flex-1 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-1.5 pr-1 text-slate-300">
+                            <!-- Logs generated on the fly -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. TECH SPEC & ARCHITECTURE TAB -->
+        <section id="tab-spec" class="hidden space-y-8">
+            <!-- Introduction Info Box -->
+            <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-900 border border-indigo-500/20 rounded-2xl p-6 shadow-md">
+                <h2 class="text-xl font-bold text-white mb-2">무선 측위 기술(RTLS) 핵심 비교 메커니즘</h2>
+                <p class="text-sm text-slate-300 leading-relaxed">
+                    작업자 실시간 위치 추적 시스템은 열악한 현장(조선소, 석유화학, 건설, 밀폐지역)에 따라 하드웨어 통신 메커니즘을 선정하는 것이 가장 중요합니다. 
+                    대표적인 무선 측위 기술인 <strong>UWB</strong>, <strong>BLE</strong>, <strong>Wi-Fi</strong> 기술의 명확한 차이와 아키텍처를 통해 맞춤 솔루션을 설계하십시오.
+                </p>
+            </div>
+
+            <!-- Technical Specification Table Grid -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-indigo-400"></i> 3대 핵심 RTLS 무선 전파 기법 대조
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                                <th class="pb-3 pr-4">비교 항목</th>
+                                <th class="pb-3 px-4 text-emerald-400 font-bold bg-emerald-500/5">UWB (Ultra-Wideband)</th>
+                                <th class="pb-3 px-4 text-indigo-400 font-bold bg-indigo-500/5">BLE (Bluetooth Low Energy)</th>
+                                <th class="pb-3 pl-4">Wi-Fi RTLS</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm text-slate-300 divide-y divide-slate-800/80">
+                            <tr>
+                                <td class="py-3.5 pr-4 font-semibold text-slate-200">정밀 오차범위</td>
+                                <td class="py-3.5 px-4 font-bold text-emerald-400 bg-emerald-500/5">10cm ~ 30cm 내외 (매우 정밀)</td>
+                                <td class="py-3.5 px-4 font-semibold text-indigo-300 bg-indigo-500/5">2m ~ 5m (신호 세기 기반 분산)</td>
+                                <td class="py-3.5 pl-4 text-slate-400">5m ~ 15m (대략적 구역 인지)</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3.5 pr-4 font-semibold text-slate-200">측위 알고리즘</td>
+                                <td class="py-3.5 px-4 bg-emerald-500/5">ToF (시간 비행 편차), TDoA</td>
+                                <td class="py-3.5 px-4 bg-indigo-500/5">RSSI (전파 수신 강도 편차), AoA</td>
+                                <td class="py-3.5 pl-4 text-slate-400">RSSI Fingerprinting, 삼각측량</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3.5 pr-4 font-semibold text-slate-200">도입 예산 규모</td>
+                                <td class="py-3.5 px-4 text-red-400 bg-emerald-500/5">매우 높음 (수집 인프라 비쌈)</td>
+                                <td class="py-3.5 px-4 text-emerald-400 bg-indigo-500/5">매우 낮음 (비콘 소량 인프라 가능)</td>
+                                <td class="py-3.5 pl-4 text-slate-400">보통 (기존 무선 AP 활용 가능)</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3.5 pr-4 font-semibold text-slate-200">배터리 소모율</td>
+                                <td class="py-3.5 px-4 bg-emerald-500/5">높음 (지속 전파 패킷 발생)</td>
+                                <td class="py-3.5 px-4 bg-indigo-500/5 text-emerald-400 font-bold">극도로 낮음 (최장 1-2년 사용)</td>
+                                <td class="py-3.5 pl-4 text-slate-400">매우 높음 (상시 충전형 단말 필요)</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3.5 pr-4 font-semibold text-slate-200">장애물 간섭 탄력</td>
+                                <td class="py-3.5 px-4 bg-emerald-500/5">매우 강함 (임펄스 전파 투과성)</td>
+                                <td class="py-3.5 px-4 bg-indigo-500/5 text-red-400">약함 (벽체, 인체 투과성 미흡)</td>
+                                <td class="py-3.5 pl-4 text-slate-400">보통 (실내 반사 회절 간섭 심함)</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3.5 pr-4 font-semibold text-slate-200">주요 실무 용도</td>
+                                <td class="py-3.5 px-4 bg-emerald-500/5 font-semibold text-white">협착 예방, 위험 가설구역 진출입 통제</td>
+                                <td class="py-3.5 px-4 bg-indigo-500/5 font-semibold text-white">사무공간 출입, 대규모 일반 물류 관제</td>
+                                <td class="py-3.5 pl-4 text-slate-400">공공 시설 내 길 안내 및 대략적 유동인구</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- RTLS Core SVG Architecture Diagram -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-diagram-project text-indigo-400"></i> 하드웨어 아키텍처 및 파이프라인 흐름도
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">작업자 태그로부터 실시간 모니터링 관제 솔루션까지의 4단계 물리 파이프라인 구성</p>
+                </div>
+                
+                <div class="w-full bg-slate-950 p-6 rounded-xl border border-slate-800/80 flex justify-center">
+                    <!-- SVG Diagram -->
+                    <svg viewBox="0 0 800 240" class="w-full max-w-3xl h-auto" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Definitions for markers and filters -->
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1" />
+                            </marker>
+                            <linearGradient id="indigo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#4f46e5" />
+                                <stop offset="100%" stop-color="#818cf8" />
+                            </linearGradient>
+                            <linearGradient id="emerald-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#059669" />
+                                <stop offset="100%" stop-color="#34d399" />
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Step 1: Active Tag -->
+                        <g transform="translate(10, 30)">
+                            <rect width="150" height="150" rx="12" fill="#1e1b4b" stroke="#4f46e5" stroke-width="2" />
+                            <circle cx="75" cy="65" r="24" fill="url(#indigo-grad)" />
+                            <path d="M75 53 L75 77 M63 65 L87 65" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+                            <text x="75" y="115" font-family="'Noto Sans KR', sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">1. 스마트 태그 / 단말</text>
+                            <text x="75" y="135" font-family="'Noto Sans KR', sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">(UWB/BLE 주기 송신)</text>
+                        </g>
+
+                        <!-- Line 1 to 2 -->
+                        <line x1="165" y1="105" x2="215" y2="105" stroke="#6366f1" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow)" />
+
+                        <!-- Step 2: Gateway / Anchor Receiver -->
+                        <g transform="translate(225, 30)">
+                            <rect width="150" height="150" rx="12" fill="#064e3b" stroke="#10b981" stroke-width="2" />
+                            <circle cx="75" cy="65" r="24" fill="url(#emerald-grad)" />
+                            <!-- Satellite dish representation -->
+                            <path d="M60 75 Q75 50 90 75 M65 70 Q75 55 85 70" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" />
+                            <circle cx="75" cy="75" r="4" fill="#ffffff" />
+                            <text x="75" y="115" font-family="'Noto Sans KR', sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">2. 수집기 / 앵커</text>
+                            <text x="75" y="135" font-family="'Noto Sans KR', sans-serif" font-size="11" fill="#a7f3d0" text-anchor="middle">(신호 패킷 전력 수집)</text>
+                        </g>
+
+                        <!-- Line 2 to 3 -->
+                        <line x1="380" y1="105" x2="430" y2="105" stroke="#6366f1" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow)" />
+
+                        <!-- Step 3: Localization Engine -->
+                        <g transform="translate(440, 30)">
+                            <rect width="150" height="150" rx="12" fill="#1e293b" stroke="#64748b" stroke-width="2" />
+                            <!-- Stack of plates -->
+                            <rect x="50" y="50" width="50" height="12" rx="3" fill="#64748b" />
+                            <rect x="50" y="66" width="50" height="12" rx="3" fill="#475569" />
+                            <rect x="50" y="82" width="50" height="12" rx="3" fill="#334155" />
+                            <text x="75" y="115" font-family="'Noto Sans KR', sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">3. 대조 국한 엔진</text>
+                            <text x="75" y="135" font-family="'Noto Sans KR', sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">(ToF/RSSI 삼각 측량)</text>
+                        </g>
+
+                        <!-- Line 3 to 4 -->
+                        <line x1="595" y1="105" x2="645" y2="105" stroke="#6366f1" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow)" />
+
+                        <!-- Step 4: Web Monitoring Dashboard -->
+                        <g transform="translate(655, 30)">
+                            <rect width="135" height="150" rx="12" fill="#311042" stroke="#d946ef" stroke-width="2" />
+                            <rect x="680" y="60" width="50" height="40" rx="4" fill="none" stroke="#ffffff" stroke-width="2" />
+                            <path d="M690 90 L720 90" stroke="#d946ef" stroke-width="3" />
+                            <text x="67" y="115" font-family="'Noto Sans KR', sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">4. 관제 웹 화면</text>
+                            <text x="67" y="135" font-family="'Noto Sans KR', sans-serif" font-size="11" fill="#f5d0fe" text-anchor="middle">(실시간 GIS 위험 알림)</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. SMARTPHONE COMPATIBILITY TAB -->
+        <section id="tab-device" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-md">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-mobile-retro text-indigo-400"></i> 스마트폰 단말 UWB / BLE 호환성 조회기
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">현장 작업자의 개인 모바일 스마트폰 기종별 RTLS 무선 칩셋 탑재 데이터베이스</p>
+                    </div>
+                    <!-- Filter and Search controls -->
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <input type="text" id="device-search-input" onkeyup="filterDevices()" placeholder="기종명을 입력하세요... (예: S24, iPhone 15)" class="bg-slate-950 border border-slate-800 text-slate-200 text-sm px-4 py-2 rounded-xl focus:outline-none focus:border-indigo-500 flex-1 md:w-64">
+                        <select id="device-os-filter" onchange="filterDevices()" class="bg-slate-950 border border-slate-800 text-slate-200 text-sm px-3 py-2 rounded-xl focus:outline-none focus:border-indigo-500">
+                            <option value="All">전체 OS</option>
+                            <option value="Samsung">삼성 갤럭시</option>
+                            <option value="iOS">애플 iOS</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Database Cards Container -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6" id="device-list-container">
+                    <!-- Cards will be populated dynamically by Javascript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. INFRASTRUCTURE BUDGET CALCULATOR TAB -->
+        <section id="tab-budget" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-md">
+                <div class="pb-4 border-b border-slate-800 mb-6">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-money-bill-trend-up text-indigo-400"></i> RTLS 도입 인프라 예산 실시간 계산기
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">현장 면적과 투입 인원에 따라 하드웨어 초기 구축비를 대략적으로 파악할 수 있는 견적 시뮬레이터입니다.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Left: Parameters & Controls (7 Cols) -->
+                    <div class="lg:col-span-7 space-y-6">
+                        <!-- Param 1: Tags Slider -->
+                        <div class="bg-slate-950 p-5 rounded-xl border border-slate-850">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="text-sm font-semibold text-slate-300">투입 목표 작업자 수 (태그 수량)</label>
+                                <span class="bg-indigo-500/10 text-indigo-400 text-sm font-bold px-3 py-1 rounded-md" id="calc-tags-badge">100 개</span>
+                            </div>
+                            <input type="range" id="input-tags" min="10" max="1000" step="10" value="100" oninput="updateBudget()" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                            <p class="text-[11px] text-slate-500 mt-2">작업자 전용 웨어러블 헬멧 태그 또는 사원증 클립형 비콘 수량입니다.</p>
+                        </div>
+
+                        <!-- Param 2: Gateway / Anchor Slider -->
+                        <div class="bg-slate-950 p-5 rounded-xl border border-slate-850">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="text-sm font-semibold text-slate-300">수집 허브 / 기지국 앵커 수량</label>
+                                <span class="bg-indigo-500/10 text-indigo-400 text-sm font-bold px-3 py-1 rounded-md" id="calc-anchors-badge">12 개</span>
+                            </div>
+                            <input type="range" id="input-anchors" min="2" max="100" step="1" value="12" oninput="updateBudget()" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                            <p class="text-[11px] text-slate-500 mt-2">신호 수집을 위해 공장 벽면, 기둥, 높은 구조물에 부착하는 고정식 수집 인프라 개수입니다.</p>
+                        </div>
+
+                        <!-- Param 3: Fixed Cost Customizations -->
+                        <div class="bg-slate-950 p-5 rounded-xl border border-slate-850 space-y-4">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wide">기타 고정 설계 비용 (옵션)</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">통합 모니터링 SW 라이선스 (₩)</label>
+                                    <input type="number" id="input-sw-cost" value="12000000" onchange="updateBudget()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">현장 무선 설치 기술비 (₩)</label>
+                                    <input type="number" id="input-setup-cost" value="5000000" onchange="updateBudget()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Comparison side-by-side (5 Cols) -->
+                    <div class="lg:col-span-5 flex flex-col gap-4 justify-between bg-slate-950 p-6 rounded-2xl border border-slate-800">
+                        <h3 class="font-bold text-base text-slate-300">도입 기술별 예상 총 비용 비교</h3>
+
+                        <div class="space-y-6 my-4">
+                            <!-- BLE Cost Display -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
+                                        <span class="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span> BLE (저비용 최적설계)
+                                    </span>
+                                    <span class="text-sm font-bold text-indigo-400" id="ble-total-text">₩ 0</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden">
+                                    <div id="ble-budget-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-300" style="width: 20%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-slate-500">
+                                    <span>태그당: 약 ₩15,000</span>
+                                    <span>앵커당: 약 ₩150,000</span>
+                                </div>
+                            </div>
+
+                            <!-- UWB Cost Display -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
+                                        <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span> UWB (안전정밀 최적설계)
+                                    </span>
+                                    <span class="text-sm font-bold text-emerald-400" id="uwb-total-text">₩ 0</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden">
+                                    <div id="uwb-budget-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 100%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-slate-500">
+                                    <span>태그당: 약 ₩80,000</span>
+                                    <span>앵커당: 약 ₩650,000</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Verdict Card -->
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800/85">
+                            <span class="text-[10px] text-indigo-400 font-bold uppercase block tracking-wider">엔지니어 가이드 코멘트</span>
+                            <p class="text-xs text-slate-300 leading-relaxed mt-1" id="budget-verdict-text">
+                                UWB 방식의 견적이 훨씬 높게 산정되지만, 협착 고위험 건설구역이나 크레인 인접 작업구역의 경우 오차범위 30cm 이내인 UWB 도입이 법적 안전 요건을 완벽히 충족할 수 있어 권장됩니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500 mt-12">
+        <p>© 2026 RTLS Engineering Dashboard WebApp. All rights reserved.</p>
+        <p class="mt-1">산업안전보건기준에 적합한 오차범위 검인 및 스마트 관제 플랫폼 설계 툴</p>
+    </footer>
+
+    <!-- INTERACTIVE JAVASCRIPT LOGIC -->
+    <script>
+        // Tab system
+        function switchTab(tabId) {
+            document.getElementById('tab-dashboard').classList.add('hidden');
+            document.getElementById('tab-spec').classList.add('hidden');
+            document.getElementById('tab-device').classList.add('hidden');
+            document.getElementById('tab-budget').classList.add('hidden');
+
+            document.getElementById('btn-tab-dashboard').className = 'px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200';
+            document.getElementById('btn-tab-spec').className = 'px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200';
+            document.getElementById('btn-tab-device').className = 'px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200';
+            document.getElementById('btn-tab-budget').className = 'px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200';
+
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            
+            const activeBtn = document.getElementById('btn-tab-' + tabId);
+            activeBtn.className = 'px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-white bg-indigo-600 shadow-sm';
+            
+            if (tabId === 'dashboard') {
+                setTimeout(resizeCanvas, 50);
+            }
+        }
+
+        // RTLS Simulation State
+        let rtlsMode = 'UWB'; // UWB or BLE
+        let workers = [
+            { id: 'WK-001', name: '김민우 대리', dept: '안전보건팀', x: 120, y: 150, vx: 0.8, vy: 0.5, battery: 94, inDanger: false, sos: false, noiseX: 0, noiseY: 0 },
+            { id: 'WK-002', name: '이서연 과장', dept: '생산설비 1팀', x: 380, y: 110, vx: -0.6, vy: 0.7, battery: 78, inDanger: false, sos: false, noiseX: 0, noiseY: 0 },
+            { id: 'WK-003', name: '박준서 사원', dept: '공정물류팀', x: 220, y: 300, vx: 0.5, vy: -0.8, battery: 85, inDanger: false, sos: false, noiseX: 0, noiseY: 0 },
+            { id: 'WK-004', name: '최유진 팀장', dept: '시설공무반', x: 500, y: 220, vx: -0.4, vy: -0.5, battery: 61, inDanger: false, sos: false, noiseX: 0, noiseY: 0 },
+            { id: 'WK-005', name: '정우진 주임', dept: '기계유지반', x: 150, y: 250, vx: 0.7, vy: 0.4, battery: 99, inDanger: false, sos: false, noiseX: 0, noiseY: 0 }
+        ];
+
+        let selectedWorkerId = 'WK-001';
+        let dangerZones = [
+            { name: '제1위험 구역 (화학물 저장고)', x: 80, y: 70, rx: 110, ry: 100, color: 'rgba(245, 158, 11, 0.25)', border: 'rgba(245, 158, 11, 0.6)' },
+            { name: '제2위험 구역 (고전압실)', x: 500, y: 240, rx: 120, ry: 90, color: 'rgba(239, 68, 68, 0.25)', border: 'rgba(239, 68, 68, 0.6)' }
+        ];
+
+        // Canvas Setup
+        const canvas = document.getElementById('rtlsCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.parentNode.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.width * 0.75; // aspect ratio 4:3
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.onload = function() {
+            resizeCanvas();
+            initSimulation();
+            populateDevices();
+            updateBudget();
+            addLog("⚡ RTLS 관제 시스템이 초기화되었습니다. 실시간 추적 엔진 대기 중.");
+            addLog("⚙️ 기본 측위 모드: UWB (초정밀 오차범위 10-30cm 국한)");
+        };
+
+        // Switch tracking mode (BLE vs UWB)
+        function setRTLSMode(mode) {
+            rtlsMode = mode;
+            const badge = document.getElementById('active-mode-badge');
+            const bleBtn = document.getElementById('mode-ble-btn');
+            const uwbBtn = document.getElementById('mode-uwb-btn');
+
+            if (mode === 'UWB') {
+                badge.innerText = "UWB (정밀형)";
+                badge.className = "text-lg font-bold text-emerald-400";
+                uwbBtn.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-emerald-500 text-slate-950 font-bold";
+                bleBtn.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400";
+                addLog("📡 측위 모드를 [UWB]로 전환했습니다. 전파 도달 비행 시간(ToF) 센싱을 사용해 오차를 수십 센티미터 이내로 축소합니다.");
+            } else {
+                badge.innerText = "BLE (저전력형)";
+                badge.className = "text-lg font-bold text-indigo-400";
+                bleBtn.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-indigo-500 text-slate-950 font-bold";
+                uwbBtn.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400";
+                addLog("📡 측위 모드를 [BLE]로 전환했습니다. Bluetooth 비콘 신호 강도(RSSI)를 바탕으로 대략적인 Zone 위치만 추정하므로 오차 반경(약 2~5m)이 늘어납니다.");
+            }
+            updateDetailPanel();
+        }
+
+        // Logging System
+        function addLog(message, type = "info") {
+            const stream = document.getElementById('console-stream');
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            let colorClass = "text-indigo-300";
+            if (message.includes("위험 구역")) colorClass = "text-amber-400 font-semibold";
+            if (message.includes("SOS") || message.includes("비상")) colorClass = "text-rose-500 font-extrabold animate-pulse";
+
+            const logItem = document.createElement('div');
+            logItem.className = `border-b border-slate-900 pb-1 ${colorClass}`;
+            logItem.innerHTML = `<span class="text-slate-500 font-normal mr-1.5">[${timeStr}]</span> ${message}`;
+            stream.appendChild(logItem);
+            stream.scrollTop = stream.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('console-stream').innerHTML = '';
+        }
+
+        // Check if point inside danger zone
+        function checkGeofence(x, y, scaleX, scaleY) {
+            // Check real relative coordinates against ellipse boundaries
+            let insideZoneIdx = -1;
+            for (let i = 0; i < dangerZones.length; i++) {
+                const zone = dangerZones[i];
+                // Map logical values
+                const dx = (x - (zone.x * scaleX));
+                const dy = (y - (zone.y * scaleY));
+                const rx = zone.rx * scaleX;
+                const ry = zone.ry * scaleY;
+                
+                if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
+                    insideZoneIdx = i;
+                    break;
+                }
+            }
+            return insideZoneIdx;
+        }
+
+        // Loop / Draw Simulation
+        function initSimulation() {
+            function updateFrame() {
+                if (document.getElementById('tab-dashboard').classList.contains('hidden')) {
+                    requestAnimationFrame(updateFrame);
+                    return;
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const scaleX = canvas.width / 640;
+                const scaleY = canvas.height / 480;
+
+                // Draw Floor Map Background Grid
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 1;
+                const gridSize = 40;
+                for (let x = 0; x < canvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+
+                // Draw Anchors (Fixpoints)
+                const anchors = [
+                    { name: 'ANCHOR_A', x: 40, y: 40 },
+                    { name: 'ANCHOR_B', x: 600, y: 40 },
+                    { name: 'ANCHOR_C', x: 40, y: 440 },
+                    { name: 'ANCHOR_D', x: 600, y: 440 }
+                ];
+                anchors.forEach(a => {
+                    const ax = a.x * scaleX;
+                    const ay = a.y * scaleY;
+                    ctx.fillStyle = '#6366f1';
+                    ctx.beginPath();
+                    ctx.arc(ax, ay, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Draw wireless waves
+                    ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(ax, ay, 20, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '9px Inter';
+                    ctx.fillText(a.name, ax - 25, ay - 10);
+                });
+
+                // Draw Danger Zones (Geofence)
+                dangerZones.forEach(zone => {
+                    ctx.fillStyle = zone.color;
+                    ctx.strokeStyle = zone.border;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.ellipse(zone.x * scaleX, zone.y * scaleY, zone.rx * scaleX, zone.ry * scaleY, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Area Tag
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = 'bold 11px Noto Sans KR';
+                    ctx.fillText(zone.name, (zone.x - zone.rx + 15) * scaleX, (zone.y - zone.ry + 20) * scaleY);
+                });
+
+                // Update & Draw Workers
+                let warningCount = 0;
+                let activeSos = 0;
+
+                workers.forEach(w => {
+                    // Kinematics
+                    w.x += w.vx;
+                    w.y += w.vy;
+
+                    // Wall bounce boundaries
+                    if (w.x < 20 || w.x > 620) w.vx *= -1;
+                    if (w.y < 20 || w.y > 460) w.vy *= -1;
+
+                    // Add simulation noise based on engine mode
+                    if (rtlsMode === 'BLE') {
+                        // High noise
+                        w.noiseX = Math.sin(Date.now() / 400 + w.name.charCodeAt(0)) * 25;
+                        w.noiseY = Math.cos(Date.now() / 400 + w.name.charCodeAt(1)) * 25;
+                    } else {
+                        // Negligible noise
+                        w.noiseX = Math.sin(Date.now() / 800) * 2;
+                        w.noiseY = Math.cos(Date.now() / 800) * 2;
+                    }
+
+                    const displayX = (w.x + w.noiseX) * scaleX;
+                    const displayY = (w.y + w.noiseY) * scaleY;
+
+                    // Check geofence
+                    const inZoneIdx = checkGeofence(displayX, displayY, scaleX, scaleY);
+                    if (inZoneIdx !== -1) {
+                        if (!w.inDanger) {
+                            w.inDanger = true;
+                            addLog(`⚠️ [경보] ${w.name}(${w.dept}) 작업자가 ${dangerZones[inZoneIdx].name} 내부에 진입했습니다!`);
+                        }
+                        warningCount++;
+                    } else {
+                        if (w.inDanger) {
+                            w.inDanger = false;
+                            addLog(`✅ [해제] ${w.name}(${w.dept}) 작업자가 안전구역으로 복귀했습니다.`);
+                        }
+                    }
+
+                    if (w.sos) {
+                        activeSos++;
+                        // SOS Emergency Ring ripple
+                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+                        ctx.lineWidth = 3;
+                        const pulseRadius = 15 + (Date.now() % 1000) / 25;
+                        ctx.beginPath();
+                        ctx.arc(displayX, displayY, pulseRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
+                    // Accuracy uncertainty bound circles
+                    if (rtlsMode === 'BLE') {
+                        ctx.fillStyle = 'rgba(99, 102, 241, 0.08)';
+                        ctx.strokeStyle = 'rgba(99, 102, 241, 0.35)';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.arc(displayX, displayY, 40 * scaleX, 0, Math.PI * 2); // broad BLE radius
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = 'rgba(16, 185, 129, 0.05)';
+                        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.arc(displayX, displayY, 12 * scaleX, 0, Math.PI * 2); // narrow precise UWB radius
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+
+                    // Outer border selection
+                    if (w.id === selectedWorkerId) {
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.arc(displayX, displayY, 14, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
+                    // Worker central dot
+                    ctx.fillStyle = w.sos ? '#ef4444' : (w.inDanger ? '#f59e0b' : '#10b981');
+                    ctx.beginPath();
+                    ctx.arc(displayX, displayY, 8, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Worker Label Text
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 10px Noto Sans KR';
+                    ctx.fillText(w.name, displayX - 22, displayY - 18);
+                    
+                    if (w.sos) {
+                        ctx.fillStyle = '#f87171';
+                        ctx.font = 'extrabold 9px Inter';
+                        ctx.fillText('🚨 SOS!', displayX - 16, displayY + 24);
+                    }
+                } );
+
+                // Update top global badges
+                document.getElementById('stat-warning-count').innerText = `${warningCount} 명`;
+                if (warningCount > 0) {
+                    document.getElementById('stat-warning-count').className = "text-2xl font-bold mt-0.5 text-amber-500 animate-pulse";
+                } else {
+                    document.getElementById('stat-warning-count').className = "text-2xl font-bold mt-0.5 text-slate-300";
+                }
+
+                const sosBadge = document.getElementById('stat-sos-count');
+                if (activeSos > 0) {
+                    sosBadge.innerText = `🚨 비상 (${activeSos})`;
+                    sosBadge.className = "text-2xl font-bold mt-0.5 text-rose-500 animate-bounce";
+                } else {
+                    sosBadge.innerText = "정상 (0)";
+                    sosBadge.className = "text-2xl font-bold mt-0.5 text-slate-400";
+                }
+
+                // Smooth update on Selected panel
+                updateDetailPanel();
+
+                requestAnimationFrame(updateFrame);
+            }
+            requestAnimationFrame(updateFrame);
+        }
+
+        // Reset simulation coordinates
+        function resetSimulation() {
+            workers = [
+                { id: 'WK-001', name: '김민우 대리', dept: '안전보건팀', x: 120, y: 150, vx: 0.8, vy: 0.5, battery: 94, inDanger: false, sos: false, noiseX: 0, noiseY: 0 },
+                { id: 'WK-002', name: '이서연 과장', dept: '생산설비 1팀', x: 380, y: 110, vx: -0.6, vy: 0.7, battery: 78, inDanger: false, sos: false, noiseX: 0, noiseY: 0 },
+                { id: 'WK-003', name: '박준서 사원', dept: '공정물류팀', x: 220, y: 300, vx: 0.5, vy: -0.8, battery: 85, inDanger: false, sos: false, noiseX: 0, noiseY: 0 },
+                { id: 'WK-004', name: '최유진 팀장', dept: '시설공무반', x: 500, y: 220, vx: -0.4, vy: -0.5, battery: 61, inDanger: false, sos: false, noiseX: 0, noiseY: 0 },
+                { id: 'WK-005', name: '정우진 주임', dept: '기계유지반', x: 150, y: 250, vx: 0.7, vy: 0.4, battery: 99, inDanger: false, sos: false, noiseX: 0, noiseY: 0 }
+            ];
+            addLog("🔄 시뮬레이터 작업자 위치 및 동선을 원격 리셋했습니다.");
+        }
+
+        // Interactive Click on Canvas Workers
+        canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+            const scaleX = canvas.width / 640;
+            const scaleY = canvas.height / 480;
+
+            let found = null;
+            workers.forEach(w => {
+                const wx = (w.x + w.noiseX) * scaleX;
+                const wy = (w.y + w.noiseY) * scaleY;
+                const dist = Math.hypot(clickX - wx, clickY - wy);
+                if (dist < 20) {
+                    found = w;
+                }
+            });
+
+            if (found) {
+                selectedWorkerId = found.id;
+                addLog(`🔍 관제사 클릭: ${found.name} (${found.dept}) 타겟 매핑 개시`);
+                updateDetailPanel();
+            }
+        });
+
+        // Update Right Detail Panel with selected worker data
+        function updateDetailPanel() {
+            const w = workers.find(item => item.id === selectedWorkerId);
+            if (!w) return;
+
+            document.getElementById('panel-worker-name').innerText = w.name;
+            document.getElementById('panel-worker-dept').innerText = w.dept;
+            document.getElementById('panel-worker-id').innerText = `ID: ${w.id}`;
+            
+            // Scaled distance to real coordinates for display (e.g. max x=30m, y=24m)
+            const realX = (w.x * 0.05).toFixed(1);
+            const realY = (w.y * 0.05).toFixed(1);
+            document.getElementById('panel-worker-coords').innerText = `X: ${realX}m, Y: ${realY}m`;
+
+            const batSpan = document.getElementById('panel-worker-battery');
+            batSpan.innerHTML = `<i class="fa-solid fa-battery-three-quarters mr-1.5"></i> ${w.battery}%`;
+            if (w.battery < 20) {
+                batSpan.className = "text-sm font-bold text-red-500 mt-1 block flex items-center gap-1.5 animate-pulse";
+            } else if (w.battery < 50) {
+                batSpan.className = "text-sm font-bold text-amber-500 mt-1 block flex items-center gap-1.5";
+            } else {
+                batSpan.className = "text-sm font-bold text-emerald-400 mt-1 block flex items-center gap-1.5";
+            }
+
+            // Signal Metrics Visual
+            const signalTitle = document.getElementById('signal-title-type');
+            const signalVal = document.getElementById('signal-value-badge');
+            const bar = document.getElementById('signal-strength-bar');
+            const metricMin = document.getElementById('signal-metric-min');
+            const metricMax = document.getElementById('signal-metric-max');
+
+            if (rtlsMode === 'UWB') {
+                signalTitle.innerText = "UWB (ToF 전파 측정 시간 편차)";
+                metricMin.innerText = "최저 지연: 0.5 ns";
+                metricMax.innerText = "최고 지연: 80.0 ns";
+
+                // Generate fake realistic ToF ns
+                const distToCenter = Math.hypot(w.x - 320, w.y - 240);
+                const fakeToF = (distToCenter * 0.15 + Math.random() * 0.2).toFixed(2);
+                signalVal.innerText = `${fakeToF} ns`;
+                signalVal.className = "text-xs font-mono font-bold text-emerald-400";
+                
+                // Adjust bar indicator fill
+                const percentage = Math.min(Math.max((fakeToF / 80) * 100, 10), 100);
+                bar.style.width = `${percentage}%`;
+                bar.className = "bg-emerald-500 h-full rounded-full transition-all duration-300";
+
+                document.getElementById('panel-accuracy-title').innerText = "UWB 초광대역 시간펄스 측위";
+                document.getElementById('panel-accuracy-val').innerText = "± 0.2m";
+                document.getElementById('panel-accuracy-val').className = "bg-emerald-500/10 text-emerald-400 px-2.5 py-1 text-sm font-extrabold rounded-md border border-emerald-500/20";
+            } else {
+                signalTitle.innerText = "BLE (RSSI 수신강도 신호 세기)";
+                metricMin.innerText = "감쇄한계: -100 dBm";
+                metricMax.innerText = "수신한계: -30 dBm";
+
+                // Generate RSSI dBm
+                const distToCenter = Math.hypot(w.x - 320, w.y - 240);
+                const fakeRSSI = Math.round(-40 - (distToCenter * 0.15) + (Math.random() * 5));
+                signalVal.innerText = `${fakeRSSI} dBm`;
+                signalVal.className = "text-xs font-mono font-bold text-indigo-400";
+
+                const percentage = Math.min(Math.max(( (fakeRSSI + 100) / 70 ) * 100, 5), 100);
+                bar.style.width = `${percentage}%`;
+                bar.className = "bg-indigo-500 h-full rounded-full transition-all duration-300";
+
+                document.getElementById('panel-accuracy-title').innerText = "BLE 2.4GHz 신호 세기 감쇄";
+                document.getElementById('panel-accuracy-val').innerText = "± 4.5m";
+                document.getElementById('panel-accuracy-val').className = "bg-indigo-500/10 text-indigo-400 px-2.5 py-1 text-sm font-extrabold rounded-md border border-indigo-500/20";
+            }
+
+            // Enable SOS Button
+            const sosBtn = document.getElementById('btn-panel-sos');
+            sosBtn.disabled = false;
+            if (w.sos) {
+                sosBtn.innerText = "비상해제 (무선 복구)";
+                sosBtn.className = "flex-1 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer";
+            } else {
+                sosBtn.innerText = "강제 비상 호출 (SOS)";
+                sosBtn.className = "flex-1 bg-red-600 hover:bg-red-500 active:scale-95 text-white py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer";
+            }
+        }
+
+        // Trigger Selected worker SOS
+        function triggerSelectedSOS() {
+            const w = workers.find(item => item.id === selectedWorkerId);
+            if (!w) return;
+            w.sos = !w.sos;
+            if (w.sos) {
+                addLog(`🚨🚨 [비상 호출] ${w.name} 대리자 태그로부터 긴급 SOS 패킷이 연동 수집되었습니다! 구조 지원팀 배치 중.`);
+            } else {
+                addLog(`💚 [비상 해제] ${w.name} 작업자 SOS 패킷이 정상 리셋 조치되었습니다.`);
+            }
+            updateDetailPanel();
+        }
+
+        // Trigger random worker SOS for demonstration
+        function triggerRandomSOS() {
+            const randIdx = Math.floor(Math.random() * workers.length);
+            workers[randIdx].sos = true;
+            addLog(`🚨🚨 [강제 모의 SOS] ${workers[randIdx].name} 작업자 태그의 비상 스위치가 격촉 작동했습니다!`);
+            selectedWorkerId = workers[randIdx].id;
+            updateDetailPanel();
+        }
+
+        // Compatibility DB Model
+        const devices = [
+            { brand: 'Samsung', name: '갤럭시 S24 Ultra', ble: 'v5.3', uwb: '탑재 (NXP SR200)', status: '완전 지원', desc: 'UWB 정밀 트랙킹 칩 장착으로 위험 진입 예방에 최고 성능 발휘' },
+            { brand: 'Samsung', name: '갤럭시 S24+ / S23 Ultra', ble: 'v5.3', uwb: '탑재 (NXP SR100T)', status: '완전 지원', desc: 'BLE 비콘 감지 및 고정밀 UWB ToF 삼각 측량 완벽 적용' },
+            { brand: 'Samsung', name: '갤럭시 S24 (일반형)', ble: 'v5.3', uwb: '미지원', status: 'BLE 제한적 지원', desc: 'BLE 전력 감쇄법 측위만 사용 가능하므로, 4~5m 단위 Zone 구역 식별에 적절' },
+            { brand: 'Samsung', name: '갤럭시 A55 / A35', ble: 'v5.3', uwb: '미지원', status: 'BLE 제한적 지원', desc: '보급형 모델로 BLE 측위 인프라에서만 수집 감지가 이루어집니다.' },
+            { brand: 'iOS', name: 'iPhone 15 Pro / Max', ble: 'v5.3', uwb: '탑재 (Apple U2 2세대)', status: '완전 지원', desc: '애플 2세대 초정밀 UWB 공정 기술 지원. 높은 신호 직진성 확보.' },
+            { brand: 'iOS', name: 'iPhone 15 (일반/플러스)', ble: 'v5.3', uwb: '탑재 (Apple U2)', status: '완전 지원', desc: '일반 모델 또한 최신 세대 U1/U2 통합 칩셋 탑재로 고정밀 RTLS 활용 가능.' },
+            { brand: 'iOS', name: 'iPhone 14 / Pro Series', ble: 'v5.3', uwb: '탑재 (Apple U1)', status: '완전 지원', desc: '안전 보건 예방용 고정밀 ToF 지향 측위 칩 연동이 원활합니다.' },
+            { brand: 'iOS', name: 'iPhone SE (3세대)', ble: 'v5.0', uwb: '미지원', status: 'BLE 제한적 지원', desc: 'UWB 전용 위상 칩이 배제되어, BLE RSSI 삼각측량 기법으로만 모니터링 가능.' },
+            { brand: 'Samsung', name: '갤럭시 SmartTag2 (자재용)', ble: 'v5.3', uwb: '탑재', status: '설비 최적 지원', desc: '자재나 중장비 전용 태그로, UWB 무선 측위를 통한 정확한 적치물 확인 가능.' }
+        ];
+
+        function populateDevices() {
+            const container = document.getElementById('device-list-container');
+            container.innerHTML = '';
+
+            devices.forEach(d => {
+                const isUwb = d.uwb.includes('탑재');
+                const badgeColor = isUwb ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
+                
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all flex flex-col justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="text-[10px] uppercase font-bold text-slate-500">${d.brand} Mobile DB</span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full ${badgeColor}">${d.status}</span>
+                        </div>
+                        <h4 class="font-bold text-white text-base mt-2">${d.name}</h4>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">${d.desc}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-900 grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-900 px-2 py-1.5 rounded text-slate-300">
+                            <span class="text-[9px] text-slate-500 block">블루투스 버전</span>
+                            <strong class="text-indigo-400">${d.ble}</strong>
+                        </div>
+                        <div class="bg-slate-900 px-2 py-1.5 rounded text-slate-300">
+                            <span class="text-[9px] text-slate-500 block">초광대역 UWB</span>
+                            <strong class="${isUwb ? 'text-emerald-400' : 'text-slate-500'}">${d.uwb}</strong>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterDevices() {
+            const search = document.getElementById('device-search-input').value.toLowerCase();
+            const filterOS = document.getElementById('device-os-filter').value;
+            const container = document.getElementById('device-list-container');
+            container.innerHTML = '';
+
+            const filtered = devices.filter(d => {
+                const matchesSearch = d.name.toLowerCase().includes(search) || d.desc.toLowerCase().includes(search);
+                const matchesOS = (filterOS === 'All') || (filterOS === d.brand);
+                return matchesSearch && matchesOS;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-8 text-center text-slate-500 text-xs">조회된 조건에 부합하는 스마트 기기가 존재하지 않습니다.</div>`;
+                return;
+            }
+
+            filtered.forEach(d => {
+                const isUwb = d.uwb.includes('탑재');
+                const badgeColor = isUwb ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
+                
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all flex flex-col justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="text-[10px] uppercase font-bold text-slate-500">${d.brand} Mobile DB</span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full ${badgeColor}">${d.status}</span>
+                        </div>
+                        <h4 class="font-bold text-white text-base mt-2">${d.name}</h4>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">${d.desc}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-900 grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-900 px-2 py-1.5 rounded text-slate-300">
+                            <span class="text-[9px] text-slate-500 block">블루투스 버전</span>
+                            <strong class="text-indigo-400">${d.ble}</strong>
+                        </div>
+                        <div class="bg-slate-900 px-2 py-1.5 rounded text-slate-300">
+                            <span class="text-[9px] text-slate-500 block">초광대역 UWB</span>
+                            <strong class="${isUwb ? 'text-emerald-400' : 'text-slate-500'}">${d.uwb}</strong>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Budget Calculator Formula logic
+        function updateBudget() {
+            const tags = parseInt(document.getElementById('input-tags').value);
+            const anchors = parseInt(document.getElementById('input-anchors').value);
+            const swCost = parseInt(document.getElementById('input-sw-cost').value) || 0;
+            const setupCost = parseInt(document.getElementById('input-setup-cost').value) || 0;
+
+            document.getElementById('calc-tags-badge').innerText = `${tags} 개`;
+            document.getElementById('calc-anchors-badge').innerText = `${anchors} 개`;
+
+            // Unit Prices
+            const BLE_TAG_UNIT = 15000;  // 15,000 KRW
+            const BLE_ANCHOR_UNIT = 150000; // 150,000 KRW
+
+            const UWB_TAG_UNIT = 80000;  // 80,000 KRW
+            const UWB_ANCHOR_UNIT = 650000; // 650,000 KRW
+
+            // Total calculations
+            const totalBLE = (tags * BLE_TAG_UNIT) + (anchors * BLE_ANCHOR_UNIT) + swCost + setupCost;
+            const totalUWB = (tags * UWB_TAG_UNIT) + (anchors * UWB_ANCHOR_UNIT) + swCost + setupCost;
+
+            // Update DOM text
+            document.getElementById('ble-total-text').innerText = `₩ ${totalBLE.toLocaleString()}`;
+            document.getElementById('uwb-total-text').innerText = `₩ ${totalUWB.toLocaleString()}`;
+
+            // Adjust comparison progress bar percentage
+            const maxBudget = Math.max(totalBLE, totalUWB);
+            const bleBarPercent = (totalBLE / maxBudget) * 100;
+            const uwbBarPercent = (totalUWB / maxBudget) * 100;
+
+            document.getElementById('ble-budget-bar').style.width = `${bleBarPercent}%`;
+            document.getElementById('uwb-budget-bar').style.width = `${uwbBarPercent}%`;
+
+            // Verdict algorithm
+            const verdictBox = document.getElementById('budget-verdict-text');
+            const diff = totalUWB - totalBLE;
+            
+            if (tags > 400 || anchors > 45) {
+                verdictBox.innerText = `현재 대규모 현장 규모(인원/면적) 설계 상태입니다. UWB 방식이 약 ₩${diff.toLocaleString()} 더 비싸지만, 중대재해 처벌법 및 크레인 협착 예방 등 초정밀성이 요하는 거대 조선·가설 공간에는 UWB 도입 후 '비상 SOS 인프라'를 통합 구비하는 것이 압도적 안전성을 제공합니다. 일반 중대 면적 공장이라면 BLE 방식이 비용 절감의 타협책이 될 수 있습니다.`;
+            } else {
+                verdictBox.innerText = `현재 소중규모 현장 설정입니다. 기술 예산 편차는 약 ₩${diff.toLocaleString()} 수준입니다. 현장 내에 밀폐 공간, 화학 물질 저장 구역 같은 '고위험 국소 지역'이 2곳 이상 있다면 BLE 인프라보다 30cm 정밀 한계의 UWB 앵커를 정적 배치하는 편이 작업자 낙상 및 침범 사고 시 100% 검수 신뢰를 가집니다.`;
+            }
+        }
+    </script>
+</body>
+</html>
