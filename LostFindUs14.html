@@ -1,0 +1,4527 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>LostFindUs - 실종 예방 및 추적 플랫폼</title>
+
+    <!-- React & ReactDOM -->
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome (Icons) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <style>
+      body {
+        background-color: #f3f4f6;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.3s ease-out forwards;
+      }
+
+      @keyframes slide-in-top {
+        from {
+          transform: translateY(-20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      .animate-slide-in-top {
+        animation: slide-in-top 0.4s ease-out forwards;
+      }
+
+      @keyframes radar-scan {
+        0% {
+          top: 0%;
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          top: 100%;
+          opacity: 0;
+        }
+      }
+      .animate-radar-scan {
+        animation: radar-scan 4s infinite linear;
+      }
+
+      @keyframes ping-slow {
+        0% {
+          transform: scale(0.5);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(2.5);
+          opacity: 0;
+        }
+      }
+      .animate-ping-slow {
+        animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+      }
+
+      @keyframes pulse-ring {
+        0% {
+          transform: scale(0.8);
+          opacity: 0.5;
+        }
+        100% {
+          transform: scale(2);
+          opacity: 0;
+        }
+      }
+      .animate-pulse-ring {
+        animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes sos-pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 20px rgba(220, 38, 38, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+        }
+      }
+      .animate-sos-pulse {
+        animation: sos-pulse 2s infinite;
+      }
+
+      input[type='range'] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+
+      input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: #4a4b70;
+        cursor: pointer;
+        margin-top: -8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+
+      input[type='range']::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        cursor: pointer;
+        background: #e2e8f0;
+        border-radius: 2px;
+      }
+
+      .neon-border {
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.3),
+          0 0 20px rgba(139, 92, 246, 0.1);
+        border: 2px solid rgba(167, 139, 250, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useMemo, useEffect, useRef } = React
+
+      // ==========================================
+      // [Part 1] Utilities & Data (가장 먼저 정의)
+      // ==========================================
+
+      const Icon = ({ name, size = 16, className = '' }) => {
+        const iconMap = {
+          Bell: 'fa-regular fa-bell',
+          Menu: 'fa-solid fa-bars',
+          Send: 'fa-solid fa-paper-plane',
+          MessageCircle: 'fa-regular fa-comment-dots',
+          Gift: 'fa-solid fa-gift',
+          Grid: 'fa-solid fa-table-cells-large',
+          Crosshair: 'fa-solid fa-crosshairs',
+          Battery: 'fa-solid fa-battery-full',
+          Navigation: 'fa-solid fa-location-arrow',
+          ShieldAlert: 'fa-solid fa-shield-cat',
+          Phone: 'fa-solid fa-phone',
+          ChevronLeft: 'fa-solid fa-chevron-left',
+          Info: 'fa-solid fa-circle-info',
+          ChevronRight: 'fa-solid fa-chevron-right',
+          LogOut: 'fa-solid fa-right-from-bracket',
+          Search: 'fa-solid fa-magnifying-glass',
+          Trophy: 'fa-solid fa-trophy',
+          Star: 'fa-solid fa-star',
+          CheckCircle2: 'fa-solid fa-circle-check',
+          List: 'fa-solid fa-list',
+          MapPin: 'fa-solid fa-location-dot',
+          AlertCircle: 'fa-solid fa-circle-exclamation',
+          Plus: 'fa-solid fa-plus',
+          Minus: 'fa-solid fa-minus',
+          Maximize: 'fa-solid fa-expand',
+          Camera: 'fa-solid fa-camera',
+          Target: 'fa-solid fa-crosshairs',
+          Image: 'fa-regular fa-image',
+          X: 'fa-solid fa-xmark',
+          Radio: 'fa-solid fa-tower-broadcast',
+          User: 'fa-regular fa-user',
+          Settings: 'fa-solid fa-gear',
+          AlertTriangle: 'fa-solid fa-triangle-exclamation',
+          Shield: 'fa-solid fa-shield-halved',
+          Smartphone: 'fa-solid fa-mobile-screen',
+          Wifi: 'fa-solid fa-wifi',
+          Layers: 'fa-solid fa-layer-group',
+          Home: 'fa-solid fa-house',
+          Coins: 'fa-solid fa-coins',
+          Wallet: 'fa-solid fa-wallet',
+          Clock: 'fa-regular fa-clock',
+          Users: 'fa-solid fa-users',
+          Radar: 'fa-solid fa-satellite-dish',
+          Siren: 'fa-solid fa-bell',
+          Trash: 'fa-solid fa-trash-can',
+          Pen: 'fa-solid fa-pen',
+          SirenLight: 'fa-solid fa-lightbulb',
+          FileText: 'fa-regular fa-file-lines',
+          HelpCircle: 'fa-regular fa-circle-question',
+          MessageSquare: 'fa-regular fa-message',
+          Coffee: 'fa-solid fa-mug-hot',
+          ShoppingBag: 'fa-solid fa-bag-shopping',
+          Ticket: 'fa-solid fa-ticket',
+          Comment: 'fa-solid fa-comment',
+          School: 'fa-solid fa-school',
+          Building: 'fa-solid fa-building',
+          Crown: 'fa-solid fa-crown',
+          Barcode: 'fa-solid fa-barcode',
+          Calendar: 'fa-regular fa-calendar',
+          Check: 'fa-solid fa-check',
+          QrCode: 'fa-solid fa-qrcode',
+          BoxX: 'fa-regular fa-square-minus',
+          Award: 'fa-solid fa-award',
+          TrendingUp: 'fa-solid fa-arrow-trend-up',
+          ShieldCheck: 'fa-solid fa-shield-virus',
+          Handshake: 'fa-regular fa-handshake',
+          Lock: 'fa-solid fa-lock'
+        }
+        const faClass = iconMap[name] || 'fa-solid fa-question'
+        return (
+          <i
+            className={`${faClass} ${className}`}
+            style={{ fontSize: `${size}px` }}
+          ></i>
+        )
+      }
+
+      const calculateFomScore = item => {
+        const hoursPassed = (Date.now() - item.timestamp) / 3600000
+        const timeScore = Math.max(0, 100 - hoursPassed * 10)
+        const rssiScore = Math.min(
+          100,
+          Math.max(0, (item.rssi + 100) * (100 / 70))
+        )
+        const collectorScore = Math.min(100, item.collectors * 10)
+        return rssiScore * 0.4 + timeScore * 0.3 + collectorScore * 0.3
+      }
+
+      // -- Data Objects --
+      const missingListData = [
+        {
+          id: 1,
+          type: '동물',
+          name: '초코',
+          age: '푸들',
+          location: '서초구 반포동',
+          distance: 800,
+          distanceStr: '800m',
+          time: '30분 전 실종',
+          timestamp: Date.now() - 1800000,
+          reward: 0,
+          rewardStr: null,
+          urgent: false,
+          status: '실종',
+          img: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=150&h=150',
+          description: '갈색 푸들, 몸무게 5kg.',
+          pos: { top: '35%', left: '60%' },
+          rssi: -45,
+          collectors: 8
+        },
+        {
+          id: 2,
+          type: '동물',
+          name: '나비',
+          age: '코숏',
+          location: '강남구 논현동',
+          distance: 1200,
+          distanceStr: '1.2km',
+          time: '1시간 전 실종',
+          timestamp: Date.now() - 3600000,
+          reward: 10000,
+          rewardStr: '10,000P',
+          urgent: false,
+          status: '실종',
+          img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=150&h=150',
+          description: '삼색 무늬 코리안 숏헤어.',
+          pos: { top: '15%', left: '30%' },
+          rssi: -82,
+          collectors: 3
+        },
+        {
+          id: 6,
+          type: '사람',
+          name: '김철수',
+          age: '8세',
+          location: '강남구 역삼동',
+          distance: 150,
+          distanceStr: '150m',
+          time: '10분 전 실종',
+          timestamp: Date.now() - 600000,
+          reward: 100000,
+          rewardStr: '100,000P',
+          urgent: true,
+          status: '실종',
+          img: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=150&h=150',
+          description: '키 130cm, 노란색 우비.',
+          pos: { top: '65%', left: '25%' },
+          rssi: -35,
+          collectors: 12
+        },
+        {
+          id: 4,
+          type: '동물',
+          name: '해피',
+          age: '말티즈',
+          location: '강남구 역삼동',
+          distance: 400,
+          distanceStr: '400m',
+          time: '15분 전 실종',
+          timestamp: Date.now() - 900000,
+          reward: 0,
+          rewardStr: null,
+          urgent: true,
+          status: '실종',
+          img: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=150&h=150',
+          description: '작은 말티즈, 꼬리 흔듦.',
+          pos: { top: '55%', left: '75%' },
+          rssi: -65,
+          collectors: 5
+        },
+        {
+          id: 12,
+          type: '물건',
+          name: '아이폰 15 Pro',
+          age: '티타늄',
+          location: '서초구 반포동',
+          distance: 900,
+          distanceStr: '900m',
+          time: '2시간 전 분실',
+          timestamp: Date.now() - 7200000,
+          reward: 50000,
+          rewardStr: '50,000P',
+          urgent: false,
+          status: '실종',
+          img: 'https://images.unsplash.com/photo-1696446701796-da61225697cc?auto=format&fit=crop&q=80&w=150&h=150',
+          description: '내추럴 티타늄.',
+          pos: { top: '30%', left: '50%' },
+          rssi: -95,
+          collectors: 1
+        },
+        {
+          id: 99,
+          type: '동물',
+          name: '뭉치',
+          age: '시츄',
+          location: '강남구 삼성동',
+          distance: 0,
+          distanceStr: '-',
+          time: '찾음',
+          timestamp: Date.now() - 10000000,
+          reward: 50000,
+          rewardStr: '50,000P',
+          urgent: false,
+          status: '찾음',
+          img: 'https://images.unsplash.com/photo-1558929996-da64ba858215?auto=format&fit=crop&q=80&w=150&h=150',
+          description: '보호자 만남.',
+          pos: { top: '50%', left: '50%' },
+          rssi: 0,
+          collectors: 0
+        }
+      ]
+
+      const rewardHistoryData = [
+        {
+          id: 1,
+          title: '제보 보상 (김철수)',
+          points: 5000,
+          date: '2023.10.25',
+          type: 'earn'
+        },
+        {
+          id: 2,
+          title: '일일 순찰 미션 완료',
+          points: 100,
+          date: '2023.10.24',
+          type: 'earn'
+        },
+        {
+          id: 3,
+          title: '스타벅스 기프티콘 교환',
+          points: -4500,
+          date: '2023.10.23',
+          type: 'use'
+        },
+        {
+          id: 4,
+          title: '안심 구역 설정 보상',
+          points: 500,
+          date: '2023.10.20',
+          type: 'earn'
+        }
+      ]
+
+      const notificationData = [
+        {
+          id: 1,
+          type: 'alert',
+          title: '실종 경보 발령',
+          message: '서초구 반포동 인근 치매 노인 실종 경보',
+          time: '방금 전',
+          read: false
+        },
+        {
+          id: 2,
+          type: 'info',
+          title: '안심 귀가 서비스',
+          message: '김시민님의 안심 귀가 모니터링이 시작되었습니다.',
+          time: '1시간 전',
+          read: true
+        },
+        {
+          id: 3,
+          type: 'success',
+          title: '실종자 발견 소식',
+          message:
+            '강남구 역삼동 실종 아동(김철수)을 찾았습니다. 협조 감사합니다.',
+          time: '2시간 전',
+          read: true
+        }
+      ]
+
+      const managedProfilesData = [
+        {
+          id: 1,
+          name: '김철수',
+          relation: '아들',
+          status: '안전',
+          battery: 85,
+          location: '수학 학원',
+          img: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=150&h=150'
+        },
+        {
+          id: 2,
+          name: '초코',
+          relation: '반려견',
+          status: '안전',
+          battery: 60,
+          location: '우리 집',
+          img: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=150&h=150'
+        }
+      ]
+
+      const chatListData = [
+        {
+          id: 1,
+          name: '초코 보호자',
+          msg: '정말 감사합니다! 덕분에 찾았어요.',
+          time: '방금 전',
+          unread: 2,
+          img: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=150&h=150'
+        },
+        {
+          id: 2,
+          name: '서초구 관제센터',
+          msg: '안심 귀가 스카우트 배정 완료되었습니다.',
+          time: '1시간 전',
+          unread: 0,
+          img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin'
+        },
+        {
+          id: 3,
+          name: '나비 제보자',
+          msg: '혹시 이 고양이가 맞나요? 사진 보...',
+          time: '어제',
+          unread: 0,
+          img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=User1'
+        }
+      ]
+
+      const escrowData = [
+        {
+          id: 1,
+          title: '사례금 지급 (김철수)',
+          amount: 100000,
+          status: 'verifying',
+          date: '2023.10.26',
+          partner: '제보자 (익명)'
+        },
+        {
+          id: 2,
+          title: '사례금 지급 (아이폰)',
+          amount: 50000,
+          status: 'completed',
+          date: '2023.10.20',
+          partner: '습득자 (User_99)'
+        }
+      ]
+
+      const safeZonesData = [
+        {
+          id: 1,
+          type: 'child',
+          name: '우리 집 (지민)',
+          address: '서울 강남구 강남대로 123',
+          radius: '250m',
+          active: true,
+          icon: 'Home',
+          pos: { top: '40%', left: '45%' },
+          mapPos: { top: '50%', left: '50%', size: 'w-32 h-32' },
+          size: 'w-64 h-64'
+        },
+        {
+          id: 2,
+          type: 'child',
+          name: '지민이 학교',
+          address: '서울 강남구 역삼로 456',
+          radius: '150m',
+          active: true,
+          icon: 'School',
+          pos: { top: '65%', left: '23%' },
+          mapPos: { top: '25%', left: '25%', size: 'w-20 h-20' },
+          size: 'w-40 h-40'
+        },
+        {
+          id: 3,
+          type: 'child',
+          name: '수학 학원',
+          address: '서울 강남구 대치동 789',
+          radius: '100m',
+          active: true,
+          icon: 'Building',
+          pos: { top: '22%', left: '72%' },
+          mapPos: { top: '70%', left: '75%', size: 'w-16 h-16' },
+          size: 'w-56 h-56'
+        },
+        {
+          id: 4,
+          type: 'parent',
+          name: '본가 (부모님)',
+          address: '경기 성남시 분당구',
+          radius: '500m',
+          active: true,
+          icon: 'Home',
+          pos: { top: '50%', left: '50%' },
+          mapPos: { top: '40%', left: '40%', size: 'w-40 h-40' },
+          size: 'w-64 h-64'
+        },
+        {
+          id: 5,
+          type: 'parent',
+          name: '서울대병원',
+          address: '서울 종로구 대학로',
+          radius: '300m',
+          active: true,
+          icon: 'Building',
+          pos: { top: '30%', left: '60%' },
+          mapPos: { top: '60%', left: '70%', size: 'w-24 h-24' },
+          size: 'w-40 h-40'
+        },
+        {
+          id: 6,
+          type: 'pet',
+          name: '반포 한강공원',
+          address: '서울 서초구',
+          radius: '1km',
+          active: true,
+          icon: 'MapPin',
+          pos: { top: '60%', left: '40%' },
+          mapPos: { top: '50%', left: '50%', size: 'w-48 h-48' },
+          size: 'w-80 h-80'
+        }
+      ]
+
+      // ==========================================
+      // [Level 2] Detail & Sub Views (Defined BEFORE Main Views)
+      // ==========================================
+
+      const SettingsView = ({ onBack }) => {
+        const [toggles, setToggles] = useState({
+          push: true,
+          sound: false,
+          location: true,
+          zoneAlert: true
+        })
+
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>설정</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4 space-y-6'>
+              <section className='bg-white rounded-2xl p-5 shadow-sm border border-gray-100'>
+                <h3 className='text-xs font-bold text-gray-400 mb-4'>
+                  알림 설정
+                </h3>
+                <div className='space-y-4'>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-bold text-gray-700'>
+                      푸시 알림
+                    </span>
+                    <div
+                      onClick={() =>
+                        setToggles({ ...toggles, push: !toggles.push })
+                      }
+                      className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${
+                        toggles.push ? 'bg-[#4a4b70]' : 'bg-gray-300'
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform ${
+                          toggles.push ? 'left-5' : 'left-1'
+                        }`}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-bold text-gray-700'>
+                      소리 및 진동
+                    </span>
+                    <div
+                      onClick={() =>
+                        setToggles({ ...toggles, sound: !toggles.sound })
+                      }
+                      className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${
+                        toggles.sound ? 'bg-[#4a4b70]' : 'bg-gray-300'
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform ${
+                          toggles.sound ? 'left-5' : 'left-1'
+                        }`}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className='bg-white rounded-2xl p-5 shadow-sm border border-gray-100'>
+                <h3 className='text-xs font-bold text-gray-400 mb-4'>
+                  서비스 설정
+                </h3>
+                <div className='space-y-4'>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-bold text-gray-700'>
+                      위치 정보 공유
+                    </span>
+                    <div
+                      onClick={() =>
+                        setToggles({ ...toggles, location: !toggles.location })
+                      }
+                      className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${
+                        toggles.location ? 'bg-[#4a4b70]' : 'bg-gray-300'
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform ${
+                          toggles.location ? 'left-5' : 'left-1'
+                        }`}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-bold text-gray-700'>
+                      안심존 이탈 알림
+                    </span>
+                    <div
+                      onClick={() =>
+                        setToggles({
+                          ...toggles,
+                          zoneAlert: !toggles.zoneAlert
+                        })
+                      }
+                      className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${
+                        toggles.zoneAlert ? 'bg-[#4a4b70]' : 'bg-gray-300'
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform ${
+                          toggles.zoneAlert ? 'left-5' : 'left-1'
+                        }`}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className='bg-white rounded-2xl p-5 shadow-sm border border-gray-100'>
+                <h3 className='text-xs font-bold text-gray-400 mb-4'>계정</h3>
+                <div className='space-y-4'>
+                  <div className='flex justify-between items-center cursor-pointer active:opacity-50'>
+                    <span className='text-sm font-medium text-gray-700'>
+                      로그아웃
+                    </span>
+                    <Icon
+                      name='ChevronRight'
+                      size={16}
+                      className='text-gray-300'
+                    />
+                  </div>
+                  <div className='flex justify-between items-center cursor-pointer active:opacity-50'>
+                    <span className='text-sm font-medium text-red-500'>
+                      회원 탈퇴
+                    </span>
+                    <Icon
+                      name='ChevronRight'
+                      size={16}
+                      className='text-gray-300'
+                    />
+                  </div>
+                </div>
+              </section>
+              <div className='text-center text-xs text-gray-400 mt-4'>
+                버전 1.2.4
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const MyProfileView = ({ onBack, onComplete }) => {
+        const [userData, setUserData] = useState({
+          name: '김시민',
+          phone: '010-1234-5678',
+          email: 'citizen@example.com',
+          address: '서울특별시 서초구 반포동'
+        })
+        const handleSave = () => {
+          onComplete('정보가 수정되었습니다.')
+          onBack()
+        }
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm border-b border-gray-100'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>내 정보 수정</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-6'>
+              <div className='flex flex-col items-center mb-8'>
+                <div className='w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 mb-3 relative'>
+                  <Icon name='User' size={48} />
+                  <div className='absolute bottom-0 right-0 bg-[#4a4b70] text-white p-2 rounded-full border-2 border-white shadow-sm'>
+                    <Icon name='Camera' size={14} />
+                  </div>
+                </div>
+                <h2 className='text-xl font-bold text-gray-900'>
+                  {userData.name}
+                </h2>
+                <span className='text-xs text-gray-500 mt-1'>
+                  Lv.3 시민 감시단
+                </span>
+              </div>
+              <div className='space-y-4'>
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-1.5 ml-1'>
+                    이름
+                  </label>
+                  <input
+                    type='text'
+                    value={userData.name}
+                    onChange={e =>
+                      setUserData({ ...userData, name: e.target.value })
+                    }
+                    className='w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-[#4a4b70] text-gray-800'
+                  />
+                </div>
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-1.5 ml-1'>
+                    휴대폰 번호
+                  </label>
+                  <input
+                    type='tel'
+                    value={userData.phone}
+                    onChange={e =>
+                      setUserData({ ...userData, phone: e.target.value })
+                    }
+                    className='w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-[#4a4b70] text-gray-800'
+                  />
+                </div>
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-1.5 ml-1'>
+                    이메일
+                  </label>
+                  <input
+                    type='email'
+                    value={userData.email}
+                    onChange={e =>
+                      setUserData({ ...userData, email: e.target.value })
+                    }
+                    className='w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-[#4a4b70] text-gray-800'
+                  />
+                </div>
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-1.5 ml-1'>
+                    주소 (선택)
+                  </label>
+                  <input
+                    type='text'
+                    value={userData.address}
+                    onChange={e =>
+                      setUserData({ ...userData, address: e.target.value })
+                    }
+                    className='w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-[#4a4b70] text-gray-800'
+                  />
+                </div>
+              </div>
+            </div>
+            <div className='p-4 bg-white border-t border-gray-100'>
+              <button
+                onClick={handleSave}
+                className='w-full py-4 bg-[#4a4b70] text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform'
+              >
+                저장하기
+              </button>
+            </div>
+          </div>
+        )
+      }
+
+      const MyReportsView = ({ onBack }) => {
+        const reports = [
+          {
+            id: 1,
+            date: '2023.10.25',
+            target: '김철수',
+            status: '확인중',
+            desc: '강남역 11번 출구 근처에서 봤습니다.'
+          },
+          {
+            id: 2,
+            date: '2023.10.12',
+            target: '나비',
+            status: '해결됨',
+            desc: '비슷한 고양이가 공원에 있어요.'
+          }
+        ]
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm border-b border-gray-100'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>나의 제보 내역</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+              {reports.map(item => (
+                <div
+                  key={item.id}
+                  className='bg-white p-5 rounded-2xl shadow-sm border border-gray-100'
+                >
+                  <div className='flex justify-between items-start mb-2'>
+                    <div>
+                      <span className='text-[10px] text-gray-400 block mb-1'>
+                        {item.date}
+                      </span>
+                      <h3 className='font-bold text-gray-800'>
+                        실종자: {item.target}
+                      </h3>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-bold ${
+                        item.status === '해결됨'
+                          ? 'bg-green-100 text-green-600'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                  <p className='text-sm text-gray-600 bg-gray-50 p-3 rounded-lg'>
+                    "{item.desc}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      const GenericTextView = ({ title, type, onBack }) => {
+        const contentMap = {
+          notice: [
+            {
+              id: 1,
+              title: '서비스 점검 안내 (10/30)',
+              date: '2023.10.28',
+              text: '새벽 2시부터 4시까지 서버 점검이 있을 예정입니다.'
+            },
+            {
+              id: 2,
+              title: 'Track-FOM 2.0 업데이트',
+              date: '2023.10.15',
+              text: '새로운 AR 기능이 추가되었습니다. 지금 바로 확인해보세요!'
+            }
+          ],
+          faq: [
+            {
+              id: 1,
+              title: '포인트는 어떻게 사용하나요?',
+              text: '모으신 포인트는 보상 탭에서 기프티콘으로 교환할 수 있습니다.'
+            },
+            {
+              id: 2,
+              title: '제보가 익명으로 처리되나요?',
+              text: '네, 모든 제보는 익명으로 처리되며 제보자의 정보는 안전하게 보호됩니다.'
+            }
+          ],
+          qna: [
+            {
+              id: 1,
+              title: '문의하기',
+              text: '궁금한 점이 있으신가요? help@trackfom.com 으로 메일을 보내주세요.'
+            }
+          ],
+          terms: [
+            {
+              id: 1,
+              title: '이용약관',
+              text: '제 1조 (목적) 본 약관은 Track-FOM 서비스의 이용조건 및 절차...'
+            }
+          ],
+          privacy: [
+            {
+              id: 1,
+              title: '개인정보 처리방침',
+              text: 'Track-FOM은 이용자의 개인정보를 소중히 다루며...'
+            }
+          ]
+        }
+        const items = contentMap[type] || []
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm border-b border-gray-100'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>{title}</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4 space-y-3'>
+              {items.map(item => (
+                <div
+                  key={item.id}
+                  className='bg-white p-5 rounded-xl border border-gray-100 shadow-sm'
+                >
+                  <h3 className='font-bold text-gray-800 mb-2'>{item.title}</h3>
+                  {item.date && (
+                    <p className='text-xs text-gray-400 mb-2'>{item.date}</p>
+                  )}
+                  <p className='text-sm text-gray-600 leading-relaxed whitespace-pre-wrap'>
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      const MyPointHistoryView = ({ onBack }) => {
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#4a4b70] text-white p-4 pt-6 flex items-center gap-3 shadow-md'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>포인트 내역</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4 space-y-3'>
+              <div className='bg-white p-6 rounded-2xl mb-4 text-center shadow-sm'>
+                <p className='text-gray-500 text-sm mb-1'>현재 보유 포인트</p>
+                <h2 className='text-3xl font-black text-[#4a4b70]'>12,500 P</h2>
+              </div>
+              <h3 className='font-bold text-gray-700 px-1'>상세 내역</h3>
+              {rewardHistoryData.map(item => (
+                <div
+                  key={item.id}
+                  className='bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4'
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      item.type === 'earn'
+                        ? 'bg-blue-50 text-blue-500'
+                        : 'bg-orange-50 text-orange-500'
+                    }`}
+                  >
+                    <Icon
+                      name={item.type === 'earn' ? 'Coins' : 'Gift'}
+                      size={20}
+                    />
+                  </div>
+                  <div className='flex-1'>
+                    <h4 className='font-bold text-gray-800 text-sm'>
+                      {item.title}
+                    </h4>
+                    <p className='text-[10px] text-gray-400'>{item.date}</p>
+                  </div>
+                  <span
+                    className={`font-bold text-sm ${
+                      item.type === 'earn' ? 'text-blue-600' : 'text-orange-500'
+                    }`}
+                  >
+                    {item.type === 'earn' ? '+' : ''}
+                    {item.points.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      // --- [수정된 SafeReturnView: 시뮬레이션 고도화] ---
+      const SafeReturnView = ({ onBack }) => {
+        const [isMonitoring, setIsMonitoring] = useState(false)
+        const [progress, setProgress] = useState(0)
+        const [remainingTime, setRemainingTime] = useState(10)
+        const [statusMessage, setStatusMessage] =
+          useState('안심귀가를 시작합니다.')
+        const [zoom, setZoom] = useState(1)
+        const [pan, setPan] = useState({ x: 0, y: 0 })
+        const [isDragging, setIsDragging] = useState(false)
+        const dragStart = useRef({ x: 0, y: 0 })
+
+        // [수정] 경로 좌표를 '우 -> 좌' 흐름으로 변경
+        const waypoints = [
+          { x: 300, y: 550, name: '출발' }, // 우측 하단
+          { x: 220, y: 400, name: '경찰서', icon: 'Shield' },
+          { x: 150, y: 280, name: 'CCTV 안전구역', icon: 'Camera' },
+          { x: 60, y: 150, name: '도착' } // 좌측 상단
+        ]
+
+        const [userPos, setUserPos] = useState(waypoints[0])
+
+        // Linear interpolation for polyline movement
+        const getPolylinePoint = (t, points) => {
+          // Calculate total length
+          let totalLength = 0
+          const segments = []
+          for (let i = 0; i < points.length - 1; i++) {
+            const dx = points[i + 1].x - points[i].x
+            const dy = points[i + 1].y - points[i].y
+            const len = Math.sqrt(dx * dx + dy * dy)
+            segments.push({ len, start: points[i], end: points[i + 1] })
+            totalLength += len
+          }
+
+          const targetDist = totalLength * t
+          let currentDist = 0
+
+          for (let seg of segments) {
+            if (currentDist + seg.len >= targetDist) {
+              const segT = (targetDist - currentDist) / seg.len
+              return {
+                x: seg.start.x + (seg.end.x - seg.start.x) * segT,
+                y: seg.start.y + (seg.end.y - seg.start.y) * segT
+              }
+            }
+            currentDist += seg.len
+          }
+          return points[points.length - 1]
+        }
+
+        // Interaction Handlers
+        const handleMouseDown = e => {
+          setIsDragging(true)
+          dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y }
+        }
+        const handleMouseMove = e => {
+          if (!isDragging) return
+          e.preventDefault()
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY
+          setPan({
+            x: clientX - dragStart.current.x,
+            y: clientY - dragStart.current.y
+          })
+        }
+        const handleMouseUp = () => setIsDragging(false)
+        const handleTouchStart = e => {
+          setIsDragging(true)
+          const touch = e.touches[0]
+          dragStart.current = {
+            x: touch.clientX - pan.x,
+            y: touch.clientY - pan.y
+          }
+        }
+        const handleWheel = e => {
+          const zoomSensitivity = 0.001
+          const newZoom = zoom - e.deltaY * zoomSensitivity
+          setZoom(Math.min(Math.max(newZoom, 0.5), 3))
+        }
+        const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3))
+        const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5))
+
+        useEffect(() => {
+          let animationFrameId
+          let startTime
+          const duration = 12000 // 12 seconds simulation
+
+          const animate = time => {
+            if (!startTime) startTime = time
+            const timeElapsed = time - startTime
+            const newProgress = Math.min(timeElapsed / duration, 1)
+
+            setProgress(newProgress)
+            setRemainingTime(Math.ceil(10 * (1 - newProgress)))
+
+            // Update Status Text based on progress
+            if (newProgress < 0.1) setStatusMessage('안심귀가를 시작합니다.')
+            else if (newProgress < 0.4)
+              setStatusMessage('경찰서 인근을 지나고 있습니다.')
+            else if (newProgress < 0.7) setStatusMessage('CCTV 안전 구역 진입')
+            else if (newProgress < 0.95)
+              setStatusMessage('집에 거의 도착했습니다.')
+            else setStatusMessage('귀가가 완료되었습니다.')
+
+            if (newProgress < 1) {
+              animationFrameId = requestAnimationFrame(animate)
+            } else {
+              setIsMonitoring(false)
+            }
+          }
+
+          if (isMonitoring) {
+            animationFrameId = requestAnimationFrame(animate)
+          } else {
+            cancelAnimationFrame(animationFrameId)
+          }
+          return () => cancelAnimationFrame(animationFrameId)
+        }, [isMonitoring])
+
+        useEffect(() => {
+          const newPos = getPolylinePoint(progress, waypoints)
+          setUserPos(newPos)
+        }, [progress])
+
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            {/* Header: Dark Purple Theme */}
+            <header className='bg-[#4a148c] text-white p-4 pt-6 flex justify-between items-center shadow-md z-20'>
+              <div className='flex items-center gap-3'>
+                <div className='cursor-pointer' onClick={onBack}>
+                  <Icon name='ChevronLeft' size={24} />
+                </div>
+                <h1 className='text-lg font-bold'>안심귀가 서비스</h1>
+              </div>
+              <Icon name='Bell' size={20} />
+            </header>
+
+            {/* Map Container */}
+            <div
+              className={`flex-1 relative bg-gray-100 overflow-hidden ${
+                isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              }`}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleMouseMove}
+              onTouchEnd={handleMouseUp}
+              onWheel={handleWheel}
+            >
+              <div
+                className={`absolute inset-0 origin-center ${
+                  isDragging ? '' : 'transition-transform duration-300'
+                }`}
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`
+                }}
+              >
+                <div
+                  className='absolute inset-0 opacity-10'
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(#9ca3af 1px, transparent 1px), linear-gradient(90deg, #9ca3af 1px, transparent 1px)',
+                    backgroundSize: '20px 20px',
+                    backgroundColor: '#e5e7eb'
+                  }}
+                ></div>
+
+                {/* Path */}
+                <svg className='absolute inset-0 w-full h-full pointer-events-none z-0'>
+                  <defs>
+                    <linearGradient
+                      id='gradientPath'
+                      x1='0%'
+                      y1='0%'
+                      x2='100%'
+                      y2='100%'
+                    >
+                      <stop offset='0%' stopColor='#3b82f6' />
+                      <stop offset='100%' stopColor='#8b5cf6' />
+                    </linearGradient>
+                  </defs>
+                  <polyline
+                    points={waypoints.map(p => `${p.x},${p.y}`).join(' ')}
+                    stroke='#cbd5e1'
+                    strokeWidth='6'
+                    fill='none'
+                    strokeLinecap='round'
+                    strokeDasharray='10,5'
+                  />
+                  {/* Active Path Segment */}
+                  <path
+                    d={`M${waypoints[0].x} ${waypoints[0].y} L ${userPos.x} ${userPos.y}`}
+                    stroke='#4a148c'
+                    strokeWidth='6'
+                    fill='none'
+                    strokeLinecap='round'
+                    className='animate-pulse'
+                    opacity='0.6'
+                  />
+                </svg>
+
+                {/* User Marker */}
+                <div
+                  className='absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 transition-all duration-75 ease-linear'
+                  style={{
+                    left: userPos.x,
+                    top: userPos.y,
+                    transform: `translate(-50%, -50%) scale(${1 / zoom})`
+                  }}
+                >
+                  <div className='w-10 h-10 bg-blue-500 border-4 border-white rounded-full shadow-lg flex items-center justify-center text-white animate-pulse'>
+                    <Icon name='User' size={16} />
+                  </div>
+                  {isMonitoring && (
+                    <div className='mt-1 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap'>
+                      이동 중
+                    </div>
+                  )}
+                </div>
+
+                {/* Waypoints */}
+                {waypoints.slice(1, -1).map((wp, idx) => (
+                  <div
+                    key={idx}
+                    className='absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center'
+                    style={{
+                      left: wp.x,
+                      top: wp.y,
+                      transform: `translate(-50%, -50%) scale(${1 / zoom})`
+                    }}
+                  >
+                    <div className='bg-white px-2 py-1 rounded shadow text-[10px] font-bold mb-1 text-gray-600 whitespace-nowrap'>
+                      {wp.name}
+                    </div>
+                    <div className='w-8 h-8 bg-green-500 border-2 border-white rounded-full shadow-lg flex items-center justify-center text-white'>
+                      <Icon name={wp.icon} size={12} />
+                    </div>
+                  </div>
+                ))}
+
+                {/* Home Marker */}
+                <div
+                  className='absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10'
+                  style={{
+                    left: waypoints[waypoints.length - 1].x,
+                    top: waypoints[waypoints.length - 1].y,
+                    transform: `translate(-50%, -50%) scale(${1 / zoom})`
+                  }}
+                >
+                  <div className='w-12 h-12 bg-[#4a148c] border-4 border-white rounded-full shadow-lg flex items-center justify-center text-white'>
+                    <Icon name='Home' size={20} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Status Card */}
+              <div className='absolute top-4 left-4 right-4 bg-white rounded-2xl p-5 shadow-xl z-20 animate-slide-in-top'>
+                <div className='flex items-center gap-4 mb-3'>
+                  <div className='w-12 h-12 rounded-full bg-gray-200 overflow-hidden'>
+                    <img
+                      src='https://api.dicebear.com/7.x/avataaars/svg?seed=Jimin'
+                      alt='Profile'
+                      className='w-full h-full object-cover'
+                    />
+                  </div>
+                  <div className='flex-1'>
+                    <div className='flex justify-between items-end mb-1'>
+                      <h3 className='text-lg font-bold text-gray-900 leading-none'>
+                        김시민
+                      </h3>
+                      <span className='text-xs text-gray-500 font-medium'>
+                        {progress >= 1
+                          ? '도착 완료'
+                          : `도착 예정: ${remainingTime}분 후`}
+                      </span>
+                    </div>
+                    <p className='text-sm text-gray-600 font-bold text-[#4a148c]'>
+                      {progress >= 1 ? '안전하게 귀가했습니다.' : statusMessage}
+                    </p>
+                  </div>
+                </div>
+                <div className='w-full h-2 bg-gray-100 rounded-full overflow-hidden'>
+                  <div
+                    className='h-full bg-[#4a148c] rounded-full transition-all duration-300 ease-out'
+                    style={{ width: `${Math.max(5, progress * 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Zoom Controls */}
+              <div className='absolute bottom-8 right-4 flex flex-col gap-3 z-20'>
+                <button
+                  onClick={handleZoomIn}
+                  className='bg-white p-3 rounded-full shadow-xl text-gray-600 active:scale-90 transition-all border border-gray-100 flex items-center justify-center'
+                >
+                  <Icon name='Plus' size={20} />
+                </button>
+                <button
+                  onClick={handleZoomOut}
+                  className='bg-white p-3 rounded-full shadow-xl text-gray-600 active:scale-90 transition-all border border-gray-100 flex items-center justify-center'
+                >
+                  <Icon name='Minus' size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Action Sheet */}
+            <div className='bg-white p-5 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] z-30 pb-8'>
+              <button
+                onClick={() => {
+                  if (progress >= 1) {
+                    setProgress(0)
+                    setUserPos(waypoints[0])
+                    setRemainingTime(10)
+                    setIsMonitoring(false)
+                    setStatusMessage('안심귀가를 시작합니다.')
+                  } else {
+                    setIsMonitoring(!isMonitoring)
+                  }
+                }}
+                className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg mb-3 flex items-center justify-center gap-2 transition-transform active:scale-95 ${
+                  progress >= 1
+                    ? 'bg-green-600'
+                    : isMonitoring
+                    ? 'bg-gray-700'
+                    : 'bg-[#4a148c]'
+                }`}
+              >
+                <Icon
+                  name={progress >= 1 ? 'CheckCircle2' : 'Shield'}
+                  size={20}
+                />
+                {progress >= 1
+                  ? '귀가 완료 확인'
+                  : isMonitoring
+                  ? '안심귀가 중지'
+                  : '안심귀가 시작'}
+              </button>
+              <div className='flex gap-3'>
+                <button className='flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-700 font-bold flex items-center justify-center gap-2 hover:bg-gray-50 active:bg-gray-100 transition-colors'>
+                  <Icon name='Phone' size={16} className='text-[#4a148c]' />{' '}
+                  비상 연락
+                </button>
+                <button className='flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-700 font-bold flex items-center justify-center gap-2 hover:bg-gray-50 active:bg-gray-100 transition-colors'>
+                  <Icon
+                    name='MessageSquare'
+                    size={16}
+                    className='text-[#4a148c]'
+                  />{' '}
+                  보호자에게 알림
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const EmergencySearchRequestView = ({
+        onBack,
+        onComplete,
+        onSimulate
+      }) => {
+        const [step, setStep] = useState(1)
+        const [selectedProfile, setSelectedProfile] = useState(null)
+        const [formData, setFormData] = useState({
+          photo: null,
+          description: '',
+          location: ''
+        })
+        const [stats, setStats] = useState({ sent: 0, active: 0 })
+        const profiles = [
+          {
+            id: 'choco',
+            name: '초코',
+            img: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=150&h=150',
+            defaultPhoto:
+              'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=300&h=300',
+            defaultDesc: '갈색 푸들, 몸무게 5kg.',
+            defaultLocation: '서울특별시 서초구 반포동'
+          },
+          {
+            id: 'jimin',
+            name: '지민이',
+            img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jimin&backgroundColor=c0aede',
+            defaultPhoto:
+              'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=300&h=300',
+            defaultDesc: '키 130cm, 노란색 우비 착용.',
+            defaultLocation: '서울특별시 강남구 역삼동'
+          }
+        ]
+
+        useEffect(() => {
+          if (selectedProfile) {
+            const p = profiles.find(profile => profile.id === selectedProfile)
+            if (p)
+              setFormData({
+                photo: p.defaultPhoto,
+                description: p.defaultDesc,
+                location: p.defaultLocation
+              })
+          }
+        }, [selectedProfile])
+        useEffect(() => {
+          if (step === 3) {
+            const countInterval = setInterval(() => {
+              setStats(prev => {
+                const targetSent = 213
+                const targetActive = 30
+                let nextSent = prev.sent + Math.floor(Math.random() * 20)
+                let nextActive = prev.active + Math.floor(Math.random() * 2)
+                if (nextSent > targetSent) nextSent = targetSent
+                if (nextActive > targetActive) nextActive = targetActive
+                return { sent: nextSent, active: nextActive }
+              })
+            }, 50)
+            const closeTimer = setTimeout(() => {
+              clearInterval(countInterval)
+              onComplete('실시간 추적 모드로 전환됩니다.')
+              onBack()
+            }, 3000)
+            return () => {
+              clearInterval(countInterval)
+              clearTimeout(closeTimer)
+            }
+          }
+        }, [step])
+        const handleSend = () => {
+          setStep(2)
+          setTimeout(() => {
+            setStep(3)
+            setTimeout(() => {
+              const p =
+                profiles.find(profile => profile.id === selectedProfile) || {}
+              onSimulate({
+                name: p.name || '알 수 없음',
+                type: '기타',
+                photo: formData.photo,
+                location: formData.location,
+                description: formData.description,
+                img: formData.photo
+              })
+            }, 500)
+          }, 2000)
+        }
+
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#C92A2A] text-white p-4 pt-6 flex items-center justify-between shadow-md flex-none'>
+              <div className='flex items-center gap-3'>
+                {step === 1 && (
+                  <div className='cursor-pointer' onClick={onBack}>
+                    <Icon name='ChevronLeft' size={24} />
+                  </div>
+                )}
+                <h1 className='text-lg font-bold'>긴급 찾기 요청</h1>
+              </div>
+            </header>
+            <div className='flex-1 overflow-y-auto p-6 space-y-6 flex flex-col bg-[#f5f6f8]'>
+              {step === 1 ? (
+                <>
+                  <h2 className='text-lg font-bold text-gray-800'>
+                    보호 대상 선택
+                  </h2>
+                  <div className='flex gap-3 overflow-x-auto pb-2 no-scrollbar'>
+                    {profiles.map(p => (
+                      <div
+                        key={p.id}
+                        onClick={() => setSelectedProfile(p.id)}
+                        className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 min-w-[100px] transition-all cursor-pointer ${
+                          selectedProfile === p.id
+                            ? 'border-red-500 bg-red-50 shadow-md'
+                            : 'border-gray-200 bg-white shadow-sm'
+                        }`}
+                      >
+                        <img
+                          src={p.img}
+                          alt={p.name}
+                          className='w-16 h-16 rounded-full object-cover bg-gray-100'
+                        />
+                        <p className='text-sm font-bold text-gray-800'>
+                          {p.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className='flex-1'></div>
+                  <button
+                    onClick={handleSend}
+                    disabled={!selectedProfile}
+                    className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg transition-transform ${
+                      selectedProfile
+                        ? 'bg-[#C92A2A] active:scale-95'
+                        : 'bg-gray-300 cursor-not-allowed'
+                    }`}
+                  >
+                    반경 3km 알림 발송
+                  </button>
+                </>
+              ) : step === 2 ? (
+                <div className='flex flex-col items-center justify-center h-full text-center'>
+                  <div className='w-16 h-16 border-4 border-[#df3333] border-t-transparent rounded-full animate-spin mb-6'></div>
+                  <h2 className='text-xl font-bold text-gray-800'>
+                    알림 전파 중...
+                  </h2>
+                </div>
+              ) : (
+                <div className='flex flex-col h-full w-full animate-fade-in items-center pt-10'>
+                  <div className='w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-pulse'>
+                    <Icon name='Radio' size={40} className='text-[#C92A2A]' />
+                  </div>
+                  <h2 className='text-2xl font-black text-gray-800'>
+                    긴급 상황 전파 중
+                  </h2>
+                  <p className='text-gray-500 text-sm mb-8'>
+                    반경 3km 내 사용자에게 알림을 보냈습니다.
+                  </p>
+                  <div className='w-full bg-white rounded-3xl shadow-lg border border-red-100 overflow-hidden mb-6'>
+                    <div className='h-1 bg-[#C92A2A] w-full'></div>
+                    <div className='p-6'>
+                      <div className='bg-[#1a1b2e] rounded-2xl h-32 flex items-center justify-center text-white mb-6 relative overflow-hidden'>
+                        <div className='absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-700 via-gray-900 to-black'></div>
+                        <div className='z-10 font-bold flex flex-col items-center gap-2'>
+                          <span className='text-sm'>실시간 추적 중</span>
+                          <div className='w-1 h-4 bg-green-500 animate-pulse'></div>
+                        </div>
+                      </div>
+                      <div className='flex gap-4'>
+                        <div className='flex-1 bg-gray-50 rounded-xl p-4 text-center'>
+                          <p className='text-xs text-gray-500 mb-1'>
+                            알림 수신 인원
+                          </p>
+                          <p className='text-2xl font-black text-gray-800'>
+                            {stats.sent}명
+                          </p>
+                        </div>
+                        <div className='flex-1 bg-red-50 rounded-xl p-4 text-center border border-red-100'>
+                          <p className='text-xs text-red-500 font-bold mb-1'>
+                            현재 탐색 중
+                          </p>
+                          <p className='text-2xl font-black text-red-600'>
+                            {stats.active.toLocaleString()}명
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className='mt-auto w-full space-y-3 pb-6'>
+                    <button
+                      onClick={() => {
+                        onComplete('상황판으로 이동합니다.')
+                        onBack()
+                      }}
+                      className='w-full py-4 bg-[#2d3748] text-white rounded-xl font-bold shadow-lg'
+                    >
+                      상황판 보기 (홈)
+                    </button>
+                    <button className='w-full py-4 bg-white text-[#C92A2A] border border-red-200 rounded-xl font-bold'>
+                      상황 종료
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      const EmergencySOSView = ({ onBack, onComplete, onSimulate }) => {
+        const [step, setStep] = useState(1)
+        const [stats, setStats] = useState({ sent: 0, active: 0 })
+        const [progress, setProgress] = useState(0)
+        const timerRef = useRef(null)
+        const startPress = () => {
+          if (step !== 1) return
+          let p = 0
+          timerRef.current = setInterval(() => {
+            p += 4
+            if (p > 100) p = 100
+            setProgress(p)
+            if (p >= 100) {
+              clearInterval(timerRef.current)
+              handleSend()
+            }
+          }, 50)
+        }
+        const endPress = () => {
+          if (step !== 1) return
+          if (progress < 100) {
+            setProgress(0)
+            clearInterval(timerRef.current)
+          }
+        }
+
+        // 2초 후 실시간 추적 화면으로 전환 로직 수정
+        useEffect(() => {
+          if (step === 3) {
+            const countInterval = setInterval(() => {
+              setStats(prev => {
+                const targetSent = 1452
+                const targetActive = 128
+                let nextSent = prev.sent + Math.floor(Math.random() * 100)
+                let nextActive = prev.active + Math.floor(Math.random() * 10)
+                if (nextSent > targetSent) nextSent = targetSent
+                if (nextActive > targetActive) nextActive = targetActive
+                return { sent: nextSent, active: nextActive }
+              })
+            }, 30)
+
+            const closeTimer = setTimeout(() => {
+              clearInterval(countInterval)
+              onSimulate({
+                name: '김시민 (본인)',
+                type: '사람',
+                photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jin',
+                location: '현재 위치 (GPS)',
+                description: '긴급 구조 요청',
+                img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jin'
+              })
+              onComplete('실시간 추적 모드로 전환됩니다.')
+            }, 2000)
+
+            return () => {
+              clearInterval(countInterval)
+              clearTimeout(closeTimer)
+            }
+          }
+        }, [step])
+
+        const handleSend = () => {
+          setStep(2)
+          setTimeout(() => {
+            setStep(3)
+          }, 2000)
+        }
+
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm flex-none z-10'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>긴급 신고</h1>
+            </header>
+            <div className='flex-1 flex flex-col items-center justify-center p-6 bg-white relative overflow-hidden'>
+              {step === 1 ? (
+                <>
+                  <div className='relative mb-12'>
+                    <div className='absolute inset-0 rounded-full bg-red-100 animate-ping opacity-75'></div>
+                    <div className='absolute -inset-4 rounded-full border border-red-100 animate-pulse'></div>
+                    <div
+                      className='absolute -inset-8 rounded-full border border-red-50 animate-pulse'
+                      style={{ animationDelay: '0.5s' }}
+                    ></div>
+                    <button
+                      onMouseDown={startPress}
+                      onMouseUp={endPress}
+                      onTouchStart={startPress}
+                      onTouchEnd={endPress}
+                      className='relative w-48 h-48 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex flex-col items-center justify-center text-white shadow-2xl active:scale-95 transition-transform z-10'
+                    >
+                      <div className='text-4xl mb-2'>
+                        <Icon name='SirenLight' size={40} />
+                      </div>
+                      <span className='text-2xl font-black tracking-widest'>
+                        SOS
+                      </span>
+                      <svg className='absolute inset-0 w-full h-full -rotate-90 pointer-events-none'>
+                        <circle
+                          cx='96'
+                          cy='96'
+                          r='92'
+                          stroke='white'
+                          strokeWidth='8'
+                          fill='none'
+                          strokeDasharray='578'
+                          strokeDashoffset={578 - (578 * progress) / 100}
+                          strokeLinecap='round'
+                          className='opacity-80 transition-all duration-100'
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className='text-center mb-10 space-y-2'>
+                    <p className='text-gray-800 font-bold text-lg'>
+                      위급 상황 시 버튼을 3초간 누르세요.
+                    </p>
+                    <p className='text-gray-500 text-sm'>
+                      보호자와 경찰서에 즉시 위치가 전송됩니다.
+                    </p>
+                  </div>
+                  <div className='w-full bg-gray-50 p-5 rounded-2xl border border-gray-100 mt-auto'>
+                    <h3 className='text-xs font-bold text-gray-500 mb-4'>
+                      자동 연결 설정
+                    </h3>
+                    <div className='flex justify-between items-center mb-4'>
+                      <div className='flex items-center gap-3'>
+                        <div className='w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center'>
+                          <Icon name='Shield' size={14} />
+                        </div>
+                        <span className='text-sm font-medium text-gray-700'>
+                          112 경찰서 자동 신고
+                        </span>
+                      </div>
+                      <div className='w-10 h-6 bg-green-500 rounded-full relative'>
+                        <div className='absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm'></div>
+                      </div>
+                    </div>
+                    <div className='flex justify-between items-center'>
+                      <div className='flex items-center gap-3'>
+                        <div className='w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center'>
+                          <Icon name='User' size={14} />
+                        </div>
+                        <span className='text-sm font-medium text-gray-700'>
+                          보호자에게 위치 전송
+                        </span>
+                      </div>
+                      <div className='w-10 h-6 bg-green-500 rounded-full relative'>
+                        <div className='absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm'></div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : step === 2 ? (
+                <div className='flex flex-col items-center justify-center h-full text-center'>
+                  <div className='w-20 h-20 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-6'></div>
+                  <h2 className='text-xl font-bold text-gray-800'>
+                    긴급 신호 전송 중...
+                  </h2>
+                  <p className='text-gray-500 mt-2'>
+                    위치 정보를 수집하고 있습니다.
+                  </p>
+                </div>
+              ) : (
+                <div className='flex flex-col h-full w-full animate-fade-in'>
+                  <div className='text-center mb-6 mt-4'>
+                    <div className='inline-flex items-center justify-center w-16 h-16 bg-red-100 text-red-500 rounded-full mb-4 animate-pulse'>
+                      <Icon name='Radio' size={32} />
+                    </div>
+                    <h2 className='text-2xl font-black text-gray-800'>
+                      긴급 상황 전파 중
+                    </h2>
+                    <p className='text-gray-500 text-sm mt-1'>
+                      반경 3km 내 사용자에게 알림을 보냈습니다.
+                    </p>
+                  </div>
+                  <div className='bg-white rounded-2xl shadow-lg border border-red-100 overflow-hidden relative mb-4'>
+                    <div className='absolute top-0 left-0 w-full h-1 bg-red-500 animate-pulse'></div>
+                    <div className='p-6 flex flex-col gap-6'>
+                      <div className='relative w-full h-32 bg-gray-900 rounded-xl overflow-hidden flex items-center justify-center'>
+                        <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/127.0276,37.4979,14,0/300x150?access_token=YOUR_TOKEN')] bg-cover bg-center opacity-40"></div>
+                        <div className='absolute w-64 h-64 border border-red-500/30 rounded-full animate-pulse-ring'></div>
+                        <div
+                          className='absolute w-48 h-48 border border-red-500/50 rounded-full animate-pulse-ring'
+                          style={{ animationDelay: '0.5s' }}
+                        ></div>
+                        <div className='z-10 text-white font-bold flex items-center gap-2'>
+                          <span className='w-2 h-2 bg-red-500 rounded-full animate-ping'></span>{' '}
+                          실시간 추적 중
+                        </div>
+                      </div>
+                      <div className='grid grid-cols-2 gap-4 text-center'>
+                        <div className='bg-gray-50 p-3 rounded-xl'>
+                          <p className='text-xs text-gray-500 mb-1'>
+                            알림 수신 인원
+                          </p>
+                          <p className='text-2xl font-black text-gray-800'>
+                            {stats.sent.toLocaleString()}명
+                          </p>
+                        </div>
+                        <div className='bg-red-50 p-3 rounded-xl border border-red-100'>
+                          <p className='text-xs text-red-500 font-bold mb-1'>
+                            현재 탐색 중
+                          </p>
+                          <p className='text-2xl font-black text-red-600'>
+                            {stats.active.toLocaleString()}명
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className='mt-auto space-y-3 pb-6'>
+                    <button
+                      onClick={() => {
+                        onComplete('상황판으로 이동합니다.')
+                        onBack()
+                      }}
+                      className='w-full py-4 bg-gray-800 text-white rounded-xl font-bold shadow-lg'
+                    >
+                      상황판 보기 (홈)
+                    </button>
+                    <button className='w-full py-4 bg-white text-red-500 border border-red-200 rounded-xl font-bold hover:bg-red-50 transition-colors'>
+                      상황 종료
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      const BystanderAlertDetailView = ({ onBack, onNavigate, alertData }) => {
+        if (!alertData) return null
+        const isSafe = alertData.isSafe
+        const isFound = alertData.status === '찾음'
+        let headerColor = 'bg-[#df3333]'
+        let headerTitle = '긴급 제보 요청'
+        if (isFound) {
+          headerColor = 'bg-green-600'
+          headerTitle = '상황 종료 (발견)'
+        } else if (isSafe) {
+          headerColor = 'bg-green-500'
+          headerTitle = '안심 구역 진입'
+        }
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header
+              className={`${headerColor} text-white p-4 pt-6 flex items-center gap-3 shadow-md transition-colors duration-300`}
+            >
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>{headerTitle}</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-6 text-center'>
+              <h2 className='text-2xl font-black text-gray-800 mb-2'>
+                {isFound
+                  ? `${alertData.name} 님을 찾았습니다!`
+                  : isSafe
+                  ? `${alertData.name} 님은 안전합니다`
+                  : `${alertData.name} 님을 찾고 있습니다`}
+              </h2>
+              <div className='w-full aspect-square rounded-3xl overflow-hidden shadow-2xl mb-6 relative'>
+                <img
+                  src={alertData.img}
+                  alt={alertData.name}
+                  className={`w-full h-full object-cover ${
+                    isFound ? 'grayscale' : ''
+                  }`}
+                />
+                {isFound && (
+                  <div className='absolute inset-0 flex items-center justify-center bg-black/40'>
+                    <span className='border-4 border-green-500 text-green-500 font-black text-4xl px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm transform -rotate-12'>
+                      FOUND
+                    </span>
+                  </div>
+                )}
+                {isSafe && (
+                  <div className='absolute inset-0 flex items-center justify-center bg-green-500/20'>
+                    <span className='text-white font-black text-2xl drop-shadow-md'>
+                      Safe Zone
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className='space-y-4 text-left'>
+                {isFound ? (
+                  <div className='bg-white p-4 rounded-2xl border border-green-100 text-center'>
+                    <p className='text-green-600 font-bold mb-1'>
+                      가족의 품으로 돌아갔습니다.
+                    </p>
+                    <p className='text-xs text-gray-500'>
+                      함께 걱정해주신 시민 여러분 감사합니다.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className='bg-white p-4 rounded-2xl border border-gray-100'>
+                      <p className='text-xs text-gray-400 mb-1'>
+                        최종 접촉 장소
+                      </p>
+                      <p className='font-bold text-gray-800'>
+                        {alertData.location}
+                      </p>
+                    </div>
+                    <div className='bg-white p-4 rounded-2xl border border-gray-100'>
+                      <p className='text-xs text-gray-400 mb-1'>특징 및 상황</p>
+                      <p className='text-sm text-gray-600 leading-relaxed'>
+                        {alertData.description}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className='p-4 bg-white border-t flex gap-3'>
+              <button
+                onClick={onBack}
+                className='flex-1 py-3.5 rounded-xl font-bold bg-gray-100 text-gray-500 transition-transform active:scale-95'
+              >
+                닫기
+              </button>
+              {!isFound && !isSafe && (
+                <button
+                  onClick={() => onNavigate('report-process')}
+                  className='flex-[2] py-3.5 rounded-xl font-bold bg-[#df3333] text-white shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95'
+                >
+                  <Icon name='Camera' size={16} /> 제보하기
+                </button>
+              )}
+              {(isFound || isSafe) && (
+                <button
+                  onClick={onBack}
+                  className='flex-[2] py-3.5 rounded-xl font-bold bg-gray-800 text-white shadow-lg transition-transform active:scale-95'
+                >
+                  확인
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      const ReportProcessView = ({ onClose, alertData, onComplete }) => {
+        const [step, setStep] = useState(1)
+        const [reportData, setReportData] = useState({ photo: null, desc: '' })
+        const fileInputRef = useRef(null)
+        const handleImageChange = e => {
+          const file = e.target.files[0]
+          if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () =>
+              setReportData({ ...reportData, photo: reader.result })
+            reader.readAsDataURL(file)
+          }
+        }
+        const handleSubmit = () => {
+          setStep(2)
+          setTimeout(() => {
+            setStep(3)
+          }, 2000)
+        }
+
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#4a4b70] text-white p-4 pt-6 flex items-center justify-between shadow-md'>
+              <h1 className='text-lg font-bold'>제보하기</h1>
+              {step !== 2 && (
+                <div className='cursor-pointer' onClick={onClose}>
+                  <Icon name='X' size={24} />
+                </div>
+              )}
+            </header>
+            {step === 1 && (
+              <div className='flex-1 p-6 flex flex-col gap-6'>
+                <h2 className='text-xl font-bold text-gray-800'>
+                  {alertData?.name} 님에 대한 제보
+                </h2>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className='w-full h-44 bg-white rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 cursor-pointer overflow-hidden transition-all hover:border-[#4a4b70] hover:bg-gray-50'
+                >
+                  <input
+                    type='file'
+                    ref={fileInputRef}
+                    className='hidden'
+                    accept='image/*'
+                    onChange={handleImageChange}
+                  />
+                  {reportData.photo ? (
+                    <img
+                      src={reportData.photo}
+                      className='w-full h-full object-cover'
+                      alt='제보 사진'
+                    />
+                  ) : (
+                    <div className='flex flex-col items-center'>
+                      <Icon name='Image' size={32} className='mb-2' /> 사진 촬영
+                      또는 업로드
+                    </div>
+                  )}
+                </div>
+                <textarea
+                  value={reportData.desc}
+                  onChange={e =>
+                    setReportData({ ...reportData, desc: e.target.value })
+                  }
+                  placeholder='상황을 적어주세요.'
+                  className='w-full p-4 rounded-xl border border-gray-200 h-32 focus:outline-none focus:ring-1 focus:ring-[#4a4b70] text-gray-800'
+                />
+                <div className='w-full p-4 rounded-xl bg-blue-50 border border-blue-100 flex justify-between items-center shadow-sm'>
+                  <div className='flex items-center gap-2'>
+                    <div className='w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center'>
+                      <Icon name='Phone' size={14} />
+                    </div>
+                    <span className='text-sm font-bold text-gray-600'>
+                      제보자 연락처
+                    </span>
+                  </div>
+                  <span className='text-blue-600 font-black text-lg'>
+                    010-1234-5678
+                  </span>
+                </div>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!reportData.desc}
+                  className={`w-full py-4 rounded-xl font-bold text-white mt-auto transition-all ${
+                    reportData.desc
+                      ? 'bg-[#4a4b70] active:scale-95'
+                      : 'bg-gray-300'
+                  }`}
+                >
+                  제보 제출하기
+                </button>
+              </div>
+            )}
+            {step === 2 && (
+              <div className='flex-1 flex flex-col items-center justify-center bg-white'>
+                <div className='w-12 h-12 border-4 border-gray-200 border-t-[#4a4b70] rounded-full animate-spin mb-4'></div>
+                <p className='font-bold text-gray-600'>
+                  제보를 전송 중입니다...
+                </p>
+              </div>
+            )}
+            {step === 3 && (
+              <div className='flex-1 flex flex-col items-center justify-center bg-white p-8 text-center animate-fade-in'>
+                <div className='text-green-500 mb-6'>
+                  <Icon name='CheckCircle2' size={64} />
+                </div>
+                <h2 className='text-2xl font-bold mb-3 text-gray-800'>
+                  제보 완료!
+                </h2>
+                <p className='text-gray-500 mb-8'>감사합니다.</p>
+                <button
+                  onClick={() => {
+                    onComplete('제보 완료')
+                    onClose()
+                  }}
+                  className='w-full py-4 bg-[#4a4b70] text-white rounded-xl font-bold shadow-lg'
+                >
+                  홈으로 돌아가기
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      // --- RewardDetailView ---
+      const RewardDetailView = ({ onBack, data }) => {
+        if (!data) return null
+        const isEarn = data.type === 'earn'
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-md z-10'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>상세 내역</h1>
+            </header>
+            <div className='flex-1 p-6 flex flex-col items-center overflow-y-auto'>
+              <div
+                className={`w-32 h-32 rounded-3xl flex items-center justify-center text-white text-4xl mb-6 shadow-lg ${
+                  isEarn
+                    ? 'bg-green-100 text-green-500'
+                    : 'bg-orange-100 text-orange-500'
+                }`}
+              >
+                <Icon name={isEarn ? 'Coins' : 'Gift'} size={48} />
+              </div>
+
+              <h2 className='text-xl font-bold text-gray-900 mb-1 text-center px-4'>
+                {data.title}
+              </h2>
+              <p className='text-sm text-gray-500 mb-2'>{data.date}</p>
+
+              <p
+                className={`text-4xl font-black mb-8 ${
+                  isEarn ? 'text-green-600' : 'text-orange-500'
+                }`}
+              >
+                {isEarn ? '+' : ''}
+                {data.points.toLocaleString()} P
+              </p>
+
+              <div className='w-full bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-5'>
+                <div className='flex justify-between items-center text-sm'>
+                  <span className='text-gray-500 font-medium'>거래 일시</span>
+                  <span className='font-bold text-gray-800'>
+                    {data.date} 14:30
+                  </span>
+                </div>
+                <div className='flex justify-between items-center text-sm'>
+                  <span className='text-gray-500 font-medium'>거래 상태</span>
+                  <span className='font-bold text-[#4a4b70]'>완료</span>
+                </div>
+                <div className='flex justify-between items-center text-sm'>
+                  <span className='text-gray-500 font-medium'>거래 번호</span>
+                  <span className='font-bold text-gray-800'>
+                    NO.{20230000 + data.id}
+                  </span>
+                </div>
+                <div className='border-t border-gray-100 my-1'></div>
+                <div className='flex justify-between items-center text-sm'>
+                  <span className='text-gray-500 font-medium'>남은 포인트</span>
+                  <span className='font-bold text-gray-800'>12,500 P</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const ChatDetailView = ({ onBack, chatData }) => {
+        if (!chatData) return null
+        const [message, setMessage] = useState('')
+        const [messages, setMessages] = useState([
+          {
+            id: 1,
+            text:
+              '안녕하세요, 혹시 실종된 ' +
+              (chatData.name.split(' ')[0] || '대상') +
+              ' 관련해서 연락 드립니다.',
+            isMe: false,
+            time: '오후 2:30'
+          },
+          {
+            id: 2,
+            text: '네! 연락주셔서 감사합니다. 어떤 상황인가요?',
+            isMe: true,
+            time: '오후 2:31'
+          },
+          {
+            id: 3,
+            text: chatData.msg,
+            isMe: false,
+            time: chatData.time === '방금 전' ? '오후 2:32' : chatData.time
+          }
+        ])
+        const handleSend = () => {
+          if (!message.trim()) return
+          setMessages([
+            ...messages,
+            { id: Date.now(), text: message, isMe: true, time: '방금 전' }
+          ])
+          setMessage('')
+        }
+        // [수정] 한글 IME 입력(조합) 중 엔터키 입력 방지 및 메시지 전송 로직 개선
+        const handleKeyDown = e => {
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+            e.preventDefault()
+            handleSend()
+          }
+        }
+
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#4a4b70] text-white p-4 pt-6 flex items-center gap-3 shadow-md flex-none'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <div className='flex items-center gap-3'>
+                <div className='w-8 h-8 rounded-full bg-white/20 overflow-hidden'>
+                  <img
+                    src={chatData.img}
+                    alt={chatData.name}
+                    className='w-full h-full object-cover'
+                  />
+                </div>
+                <h1 className='text-lg font-bold'>{chatData.name}</h1>
+              </div>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+              {messages.map(m => (
+                <div
+                  key={m.id}
+                  className={`flex ${m.isMe ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[70%] p-3 rounded-2xl text-sm ${
+                      m.isMe
+                        ? 'bg-[#4a4b70] text-white rounded-tr-none'
+                        : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none shadow-sm'
+                    }`}
+                  >
+                    {m.text}
+                  </div>
+                  <span className='text-[10px] text-gray-400 self-end mx-1 mb-1'>
+                    {m.time}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className='p-3 bg-white border-t flex gap-2 items-center pb-6'>
+              <button className='text-gray-400 p-2'>
+                <Icon name='Plus' size={20} />
+              </button>
+              <input
+                type='text'
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder='메시지를 입력하세요'
+                className='flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#4a4b70]'
+              />
+              <button
+                onClick={handleSend}
+                className={`p-2 rounded-full transition-colors ${
+                  message.trim() ? 'text-[#4a4b70]' : 'text-gray-300'
+                }`}
+              >
+                <Icon name='Send' size={20} />
+              </button>
+            </div>
+          </div>
+        )
+      }
+
+      const NotificationView = ({ onBack }) => {
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#4a4b70] text-white p-4 pt-6 flex items-center gap-3 shadow-md'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>알림 센터</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-0'>
+              {notificationData.map(noti => (
+                <div
+                  key={noti.id}
+                  className={`p-4 border-b border-gray-100 ${
+                    noti.read ? 'bg-white' : 'bg-blue-50/50'
+                  }`}
+                >
+                  <div className='flex items-start gap-3'>
+                    <div
+                      className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        noti.type === 'alert'
+                          ? 'bg-red-100 text-red-500'
+                          : noti.type === 'success'
+                          ? 'bg-green-100 text-green-500'
+                          : 'bg-blue-100 text-blue-500'
+                      }`}
+                    >
+                      <Icon
+                        name={
+                          noti.type === 'alert'
+                            ? 'Siren'
+                            : noti.type === 'success'
+                            ? 'CheckCircle2'
+                            : 'Info'
+                        }
+                        size={14}
+                      />
+                    </div>
+                    <div className='flex-1'>
+                      <div className='flex justify-between items-start mb-1'>
+                        <h3
+                          className={`text-sm font-bold ${
+                            noti.read ? 'text-gray-700' : 'text-gray-900'
+                          }`}
+                        >
+                          {noti.title}
+                        </h3>
+                        <span className='text-[10px] text-gray-400 whitespace-nowrap ml-2'>
+                          {noti.time}
+                        </span>
+                      </div>
+                      <p className='text-xs text-gray-500 leading-relaxed'>
+                        {noti.message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className='p-4 text-center text-xs text-gray-400'>
+                최근 30일 동안의 알림만 표시됩니다.
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const SafeZoneDetailView = ({ zone, onBack, onDelete }) => {
+        if (!zone) return null
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm border-b border-gray-100'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>안심존 상세</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-6'>
+              <div className='bg-gray-200 h-48 rounded-2xl mb-6 relative overflow-hidden flex items-center justify-center border border-gray-300/50 shadow-inner'>
+                <div
+                  className='absolute inset-0 opacity-20'
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)',
+                    backgroundSize: '20px 20px'
+                  }}
+                ></div>
+                <div
+                  className={`absolute flex items-center justify-center rounded-full border border-green-500/30 bg-green-500/10 w-32 h-32`}
+                >
+                  <div className='w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center text-green-700'>
+                    <Icon name={zone.icon} size={14} />
+                  </div>
+                </div>
+              </div>
+
+              <div className='space-y-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm'>
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-1'>
+                    이름
+                  </label>
+                  <input
+                    type='text'
+                    defaultValue={zone.name}
+                    className='w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4a4b70]'
+                  />
+                </div>
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-1'>
+                    주소
+                  </label>
+                  <input
+                    type='text'
+                    defaultValue={zone.address}
+                    className='w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#4a4b70]'
+                  />
+                </div>
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-1'>
+                    반경 설정 ({zone.radius})
+                  </label>
+                  <input type='range' className='w-full accent-[#4a4b70]' />
+                  <div className='flex justify-between text-[10px] text-gray-400 mt-1'>
+                    <span>100m</span>
+                    <span>500m</span>
+                    <span>1km</span>
+                    <span>2km</span>
+                  </div>
+                </div>
+                <div className='flex items-center justify-between pt-2'>
+                  <span className='text-sm font-bold text-gray-700'>
+                    알림 설정
+                  </span>
+                  <div
+                    className={`w-10 h-6 rounded-full relative ${
+                      zone.active ? 'bg-green-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                        zone.active ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className='p-4 bg-white border-t border-gray-100 flex gap-3'>
+              <button
+                onClick={() => onDelete(zone.id)}
+                className='flex-1 py-3.5 rounded-xl font-bold bg-white text-red-500 border border-red-100 hover:bg-red-50 transition-colors'
+              >
+                삭제
+              </button>
+              <button
+                onClick={onBack}
+                className='flex-[2] py-3.5 rounded-xl font-bold bg-[#4a4b70] text-white shadow-lg active:scale-95 transition-transform'
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        )
+      }
+
+      const SafeKeeperDetailView = ({ profile, onBack }) => {
+        if (!profile) return null
+
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#e4e4e7] p-4 pt-6 flex items-center gap-3 relative z-10'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='X' size={24} className='text-gray-600' />
+              </div>
+              <h1 className='text-lg font-bold text-gray-700'>
+                {profile.name}님 상세
+              </h1>
+            </header>
+
+            <div className='flex-1 overflow-y-auto p-4 pt-2'>
+              {/* Profile Section */}
+              <div className='bg-white rounded-[2.5rem] p-8 pb-10 shadow-sm border border-gray-100 flex flex-col items-center mb-4'>
+                <div className='w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-lg mb-3 relative'>
+                  <img
+                    src={profile.img}
+                    alt={profile.name}
+                    className='w-full h-full object-cover'
+                  />
+                </div>
+                <h2 className='text-2xl font-black text-gray-800 mb-1'>
+                  {profile.name}
+                </h2>
+                <span className='px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-full mb-6'>
+                  {profile.relation}
+                </span>
+
+                {/* Status Dashboard */}
+                <div className='grid grid-cols-3 gap-3 w-full'>
+                  <div className='bg-[#dcfce7] rounded-2xl p-4 flex flex-col items-center justify-center aspect-square shadow-sm'>
+                    <Icon
+                      name='CheckCircle2'
+                      className='text-green-600 mb-2'
+                      size={24}
+                    />
+                    <p className='text-[10px] text-green-700 font-bold mb-0.5'>
+                      상태
+                    </p>
+                    <p className='text-sm font-black text-green-800'>
+                      {profile.status}
+                    </p>
+                  </div>
+                  <div className='bg-[#dbeafe] rounded-2xl p-4 flex flex-col items-center justify-center aspect-square shadow-sm'>
+                    <Icon
+                      name='Battery'
+                      className='text-blue-600 mb-2'
+                      size={24}
+                    />
+                    <p className='text-[10px] text-blue-700 font-bold mb-0.5'>
+                      배터리
+                    </p>
+                    <p className='text-sm font-black text-blue-800'>
+                      {profile.battery}%
+                    </p>
+                  </div>
+                  <div className='bg-[#f3e8ff] rounded-2xl p-4 flex flex-col items-center justify-center aspect-square shadow-sm'>
+                    <Icon
+                      name='MapPin'
+                      className='text-purple-600 mb-2'
+                      size={24}
+                    />
+                    <p className='text-[10px] text-purple-700 font-bold mb-0.5'>
+                      위치
+                    </p>
+                    <p className='text-sm font-black text-purple-800 truncate w-full text-center px-1'>
+                      {profile.location}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Map Preview Grid */}
+              <div className='bg-[#e4e4e7] rounded-[2.5rem] overflow-hidden shadow-inner border border-gray-300/50 mb-4 h-64 relative'>
+                {/* Grid Background */}
+                <div
+                  className='absolute inset-0'
+                  style={{
+                    backgroundImage: `
+                        linear-gradient(rgba(156, 163, 175, 0.3) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(156, 163, 175, 0.3) 1px, transparent 1px)
+                      `,
+                    backgroundSize: '24px 24px',
+                    backgroundColor: '#e4e4e7'
+                  }}
+                ></div>
+
+                {/* Central Marker with Pulse */}
+                <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-10'>
+                  <div className='relative'>
+                    <div className='absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-30 scale-150'></div>
+                    <div className='absolute inset-0 bg-purple-400 rounded-full animate-pulse opacity-40 scale-125'></div>
+                    <div className='relative w-12 h-12 rounded-full border-[3px] border-[#8b5cf6] shadow-xl overflow-hidden bg-white z-20'>
+                      <img
+                        src={profile.img}
+                        className='w-full h-full object-cover'
+                      />
+                    </div>
+                  </div>
+                  <div className='w-2.5 h-2.5 bg-[#8b5cf6] rounded-full mt-4 shadow-sm border border-white'></div>
+                </div>
+
+                {/* Bottom Status Bar */}
+                <div className='absolute bottom-5 left-6 right-6'>
+                  <div className='bg-white/60 backdrop-blur-md rounded-xl p-3 border border-white/50 shadow-sm flex items-center justify-center gap-2'>
+                    <div className='w-2 h-2 rounded-full bg-purple-500'></div>
+                    <span className='text-xs font-bold text-gray-600'>
+                      마지막 업데이트: 방금 전
+                    </span>
+                  </div>
+                </div>
+
+                {/* Decorative corner lines */}
+                <div className='absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-gray-400/30 rounded-tl-xl'></div>
+                <div className='absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-gray-400/30 rounded-tr-xl'></div>
+                <div className='absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-gray-400/30 rounded-bl-xl'></div>
+                <div className='absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-gray-400/30 rounded-br-xl'></div>
+              </div>
+
+              {/* Actions */}
+              <div className='space-y-3'>
+                <button className='w-full py-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between px-6 shadow-sm active:scale-[0.98] transition-transform hover:border-gray-300'>
+                  <div className='flex items-center gap-4'>
+                    <div className='w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500'>
+                      <Icon name='List' size={18} />
+                    </div>
+                    <span className='font-bold text-gray-700'>
+                      이동 경로 기록
+                    </span>
+                  </div>
+                  <Icon
+                    name='ChevronRight'
+                    className='text-gray-300'
+                    size={16}
+                  />
+                </button>
+                <button className='w-full py-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between px-6 shadow-sm active:scale-[0.98] transition-transform hover:border-gray-300'>
+                  <div className='flex items-center gap-4'>
+                    <div className='w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500'>
+                      <Icon name='Bell' size={18} />
+                    </div>
+                    <span className='font-bold text-gray-700'>알림 설정</span>
+                  </div>
+                  <Icon
+                    name='ChevronRight'
+                    className='text-gray-300'
+                    size={16}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      // --- 안심이 추가 등록 화면 (AddSafeKeeperView) ---
+      const AddSafeKeeperView = ({ onBack, onComplete }) => {
+        const [name, setName] = useState('')
+        const [relation, setRelation] = useState('부모님')
+        const [step, setStep] = useState(1) // 1: Info, 2: Device, 3: Complete
+
+        const handleRegister = () => {
+          // 간단한 시뮬레이션: 새 프로필 객체 생성
+          const newProfile = {
+            id: Date.now(), // 고유 ID
+            name: name || '새 안심이',
+            relation: relation,
+            status: '안전', // 초기 상태
+            battery: 100,
+            location: '위치 확인 중...',
+            img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${
+              name || 'new'
+            }` // 랜덤 아바타
+          }
+          onComplete(newProfile) // App 컴포넌트로 데이터 전달
+        }
+
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm'>
+              <div
+                className='cursor-pointer border border-gray-400 rounded p-1'
+                onClick={onBack}
+              >
+                <Icon name='BoxX' size={20} />
+              </div>
+              <h1 className='text-lg font-bold'>안심이 등록</h1>
+            </header>
+
+            <div className='flex-1 overflow-y-auto p-6'>
+              <div className='flex flex-col items-center mb-8 mt-4'>
+                <div className='w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 mb-3 relative border-4 border-white shadow-sm'>
+                  <Icon name='User' size={40} />
+                  <div className='absolute bottom-0 right-0 bg-[#4a4b70] text-white p-2 rounded-full border-2 border-white cursor-pointer active:scale-90 transition-transform'>
+                    <Icon name='Camera' size={14} />
+                  </div>
+                </div>
+                <p className='text-xs text-gray-500'>프로필 사진 등록</p>
+              </div>
+
+              <div className='space-y-6'>
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-2 ml-1'>
+                    이름
+                  </label>
+                  <input
+                    type='text'
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder='이름을 입력하세요'
+                    className='w-full p-4 rounded-xl bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4a4b70] text-gray-800 placeholder-gray-400'
+                  />
+                </div>
+
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-2 ml-1'>
+                    관계
+                  </label>
+                  <div className='flex gap-2'>
+                    {['자녀', '부모님', '반려견', '기타'].map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setRelation(r)}
+                        className={`flex-1 py-3 rounded-xl text-sm font-bold border transition-all ${
+                          relation === r
+                            ? 'bg-[#4a4b70] text-white shadow-md'
+                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className='block text-xs font-bold text-gray-500 mb-2 ml-1'>
+                    기기 연동
+                  </label>
+                  <div className='border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center bg-gray-100 text-gray-400 cursor-pointer hover:bg-gray-50 active:bg-gray-200 transition-colors'>
+                    <Icon name='QrCode' size={24} className='mb-2' />
+                    <span className='font-bold text-sm'>
+                      QR코드 스캔하여 기기 등록
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className='p-4 bg-white border-t border-gray-100'>
+              <button
+                onClick={handleRegister}
+                disabled={!name}
+                className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 ${
+                  name ? 'bg-[#4a4b70]' : 'bg-gray-300 cursor-not-allowed'
+                }`}
+              >
+                등록하기
+              </button>
+            </div>
+          </div>
+        )
+      }
+
+      // --- MissingListView Component (Refined) ---
+      const MissingListView = ({
+        onBack,
+        onAction,
+        onMarkerSelect,
+        isWatchlist = false,
+        title = '실종자 목록'
+      }) => {
+        const [filter, setFilter] = useState('전체')
+        const [sortMode, setSortMode] = useState('최신') // 최신, 거리, 현상금
+        const [showFoundOnly, setShowFoundOnly] = useState(false) // For '찾음' filter
+
+        // Calculate counts
+        const counts = useMemo(() => {
+          return {
+            전체: missingListData.filter(i => i.status === '실종').length,
+            사람: missingListData.filter(
+              i => i.type === '사람' && i.status === '실종'
+            ).length,
+            동물: missingListData.filter(
+              i => i.type === '동물' && i.status === '실종'
+            ).length,
+            물건: missingListData.filter(
+              i => i.type === '물건' && i.status === '실종'
+            ).length,
+            해결됨: missingListData.filter(i => i.status === '찾음').length
+          }
+        }, [])
+
+        const filteredList = useMemo(() => {
+          let data = [...missingListData]
+
+          // 1. 상태 필터링 (찾음 vs 실종)
+          if (showFoundOnly) {
+            data = data.filter(item => item.status === '찾음')
+          } else {
+            data = data.filter(item => item.status === '실종')
+          }
+
+          // 2. 카테고리 필터링 (전체 외의 경우)
+          if (filter !== '전체') {
+            data = data.filter(item => item.type === filter)
+          }
+
+          // 3. 정렬
+          if (sortMode === '거리') {
+            data.sort((a, b) => a.distance - b.distance)
+          } else if (sortMode === '현상금') {
+            data.sort((a, b) => b.reward - a.reward)
+          } else {
+            // Latest (최신순 - timestamp 내림차순)
+            data.sort((a, b) => b.timestamp - a.timestamp)
+          }
+
+          return data
+        }, [filter, sortMode, showFoundOnly])
+
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm border-b border-gray-100'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>{title}</h1>
+            </header>
+
+            {!isWatchlist && (
+              <div className='bg-white border-b border-gray-100'>
+                <div className='flex px-4 py-3 gap-2 overflow-x-auto no-scrollbar'>
+                  {['전체', '사람', '동물', '물건'].map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1 ${
+                        filter === f
+                          ? 'bg-[#4a4b70] text-white'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {f}{' '}
+                      <span className='opacity-70 text-[10px]'>
+                        ({counts[f]})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className='flex px-4 pb-3 gap-2 overflow-x-auto no-scrollbar'>
+                  {['최신', '거리', '현상금'].map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setSortMode(mode)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-colors whitespace-nowrap ${
+                        sortMode === mode
+                          ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                          : 'bg-white text-gray-400 border-gray-200'
+                      }`}
+                    >
+                      {mode}순
+                    </button>
+                  ))}
+                  <div className='w-px h-6 bg-gray-200 mx-1 flex-shrink-0'></div>
+                  <button
+                    onClick={() => setShowFoundOnly(!showFoundOnly)}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-colors flex items-center gap-1 whitespace-nowrap ${
+                      showFoundOnly
+                        ? 'bg-green-50 text-green-600 border-green-100'
+                        : 'bg-white text-gray-400 border-gray-200'
+                    }`}
+                  >
+                    <Icon name='CheckCircle2' size={10} /> 해결됨 (
+                    {counts['해결됨']})
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className='flex-1 overflow-y-auto p-4 space-y-3'>
+              {filteredList.length === 0 ? (
+                <div className='flex flex-col items-center justify-center h-64 text-gray-400'>
+                  <Icon name='Search' size={32} className='mb-2 opacity-30' />
+                  <p className='text-xs'>조건에 맞는 항목이 없습니다.</p>
+                </div>
+              ) : (
+                filteredList.map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => onMarkerSelect(item)}
+                    className='bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 cursor-pointer active:scale-[0.99] transition-transform'
+                  >
+                    <div className='w-20 h-20 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0 relative'>
+                      <img
+                        src={item.img}
+                        className='w-full h-full object-cover'
+                        alt={item.name}
+                      />
+                      {item.urgent && item.status !== '찾음' && (
+                        <div className='absolute top-0 left-0 bg-red-500 text-white text-[10px] px-1.5 py-0.5 font-bold rounded-br-lg'>
+                          긴급
+                        </div>
+                      )}
+                      {item.status === '찾음' && (
+                        <div className='absolute inset-0 bg-green-500/80 flex items-center justify-center text-white font-bold text-xs'>
+                          해결됨
+                        </div>
+                      )}
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <div className='flex justify-between items-start'>
+                        <h3 className='font-bold text-gray-800 truncate'>
+                          {item.name}{' '}
+                          <span className='text-xs text-gray-400 font-normal'>
+                            ({item.age})
+                          </span>
+                        </h3>
+                        <span className='text-xs text-[#4a4b70] font-bold'>
+                          {item.rewardStr || '사례금 없음'}
+                        </span>
+                      </div>
+                      <p className='text-xs text-gray-500 mt-1 flex items-center gap-1'>
+                        <Icon name='MapPin' size={10} /> {item.location}
+                      </p>
+                      <p className='text-xs text-gray-400 mt-0.5'>
+                        {item.time}
+                      </p>
+                      <div className='mt-2 flex gap-2'>
+                        <span className='text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100'>
+                          거리 {item.distanceStr}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      // --- New Sub-views for Reward Center ---
+      const RankingView = ({ onBack }) => {
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#4a4b70] text-white p-4 pt-6 flex items-center gap-3 shadow-md z-10'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>랭킹</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4'>
+              <div className='bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-4'>
+                <div className='flex items-center gap-4'>
+                  <span className='text-2xl font-black text-[#4a4b70]'>15</span>
+                  <div className='flex flex-col'>
+                    <span className='font-bold text-gray-800'>나 (김시민)</span>
+                    <span className='text-xs text-gray-500'>12,500 P</span>
+                  </div>
+                </div>
+                <div className='w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center'>
+                  <Icon name='User' size={20} className='text-gray-400' />
+                </div>
+              </div>
+              <h3 className='font-bold text-gray-600 mb-2 px-1'>Top 랭커</h3>
+              <div className='space-y-2'>
+                {[1, 2, 3, 4, 5].map(rank => (
+                  <div
+                    key={rank}
+                    className='bg-white rounded-xl p-4 flex items-center justify-between shadow-sm'
+                  >
+                    <div className='flex items-center gap-4'>
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                          rank === 1
+                            ? 'bg-yellow-400'
+                            : rank === 2
+                            ? 'bg-gray-400'
+                            : rank === 3
+                            ? 'bg-orange-400'
+                            : 'bg-white text-gray-400'
+                        }`}
+                      >
+                        {rank <= 3 ? <Icon name='Crown' size={14} /> : rank}
+                      </div>
+                      <span className='font-medium text-gray-700'>
+                        User_{Math.floor(Math.random() * 1000)}
+                      </span>
+                    </div>
+                    <span className='font-bold text-[#4a4b70]'>
+                      {30000 - rank * 1500} P
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const MissionView = ({ onBack }) => {
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#4a4b70] text-white p-4 pt-6 flex items-center gap-3 shadow-md z-10'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>미션</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+              <div className='bg-gradient-to-r from-orange-400 to-red-500 rounded-2xl p-5 text-white shadow-lg'>
+                <h2 className='font-bold text-xl mb-1'>일일 미션</h2>
+                <p className='text-sm opacity-90 mb-4'>
+                  매일매일 미션 달성하고 포인트 받자!
+                </p>
+                <div className='w-full bg-white/30 rounded-full h-2'>
+                  <div className='bg-white h-2 rounded-full w-[60%]'></div>
+                </div>
+                <p className='text-right text-xs mt-1 font-bold'>3 / 5 완료</p>
+              </div>
+
+              <div className='space-y-2'>
+                {[
+                  '앱 출석 체크',
+                  '안심존 확인하기',
+                  '주변 순찰하기',
+                  '공지사항 확인',
+                  '프로필 업데이트'
+                ].map((mission, i) => (
+                  <div
+                    key={i}
+                    className='bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between'
+                  >
+                    <div>
+                      <h4 className='font-bold text-gray-800 text-sm'>
+                        {mission}
+                      </h4>
+                      <p className='text-xs text-orange-500 font-bold'>
+                        + {100 + i * 50} P
+                      </p>
+                    </div>
+                    <button
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold ${
+                        i < 3
+                          ? 'bg-gray-100 text-gray-400'
+                          : 'bg-orange-500 text-white shadow-md'
+                      }`}
+                    >
+                      {i < 3 ? '완료' : '받기'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const WalletView = ({ onBack }) => {
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#4a4b70] text-white p-4 pt-6 flex items-center gap-3 shadow-md z-10'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>내 지갑</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-6 flex flex-col items-center'>
+              <div className='w-full bg-gradient-to-br from-gray-800 to-black rounded-2xl p-6 text-white shadow-2xl mb-8 relative overflow-hidden'>
+                <div className='absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10'></div>
+                <div className='flex justify-between items-start mb-8'>
+                  <span className='font-bold tracking-wider'>
+                    LostFindUs Card
+                  </span>
+                  <Icon name='Wifi' className='opacity-50' size={20} />
+                </div>
+                <p className='text-sm opacity-60 mb-1'>Balance</p>
+                <h2 className='text-3xl font-bold mb-6'>12,500 P</h2>
+                <div className='flex justify-between items-end'>
+                  <span className='text-sm opacity-80'>KIM SI MIN</span>
+                  <div className='w-10 h-6 bg-yellow-500/80 rounded'></div>
+                </div>
+              </div>
+
+              <div className='bg-white p-8 rounded-2xl shadow-sm border border-gray-100 w-full flex flex-col items-center'>
+                <div className='w-48 h-12 bg-gray-800 mb-2 flex items-center justify-center text-white'>
+                  <Icon name='Barcode' size={120} />
+                </div>
+                <p className='text-xs text-gray-500 tracking-widest mt-2'>
+                  1234 - 5678 - 9012 - 3456
+                </p>
+                <p className='text-xs text-gray-400 mt-4 text-center'>
+                  이 바코드를 매장에서 보여주세요.
+                  <br />
+                  포인트로 즉시 결제됩니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const PointExchangeView = ({ onBack, onSelectProduct }) => {
+        return (
+          <div className='absolute inset-0 z-[80] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-[#4a4b70] text-white p-4 pt-6 flex items-center gap-3 shadow-md z-10'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>포인트 교환</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4'>
+              <div className='grid grid-cols-2 gap-4'>
+                {[
+                  {
+                    name: '스타벅스 아메리카노',
+                    price: 4500,
+                    icon: 'Coffee',
+                    color: 'green'
+                  },
+                  {
+                    name: 'CU 5천원권',
+                    price: 5000,
+                    icon: 'ShoppingBag',
+                    color: 'blue'
+                  },
+                  {
+                    name: '네이버페이 1만원',
+                    price: 10000,
+                    icon: 'Wallet',
+                    color: 'green'
+                  },
+                  {
+                    name: 'GS25 3천원권',
+                    price: 3000,
+                    icon: 'ShoppingBag',
+                    color: 'blue'
+                  },
+                  {
+                    name: '베스킨라빈스',
+                    price: 6500,
+                    icon: 'Gift',
+                    color: 'green'
+                  },
+                  {
+                    name: '파리바게트',
+                    price: 7000,
+                    icon: 'ShoppingBag',
+                    color: 'blue'
+                  }
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    onClick={() => onSelectProduct(item)}
+                    className='bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center active:scale-[0.98] transition-transform cursor-pointer hover:border-[#4a4b70]'
+                  >
+                    <div
+                      className={`w-16 h-16 rounded-full mb-3 flex items-center justify-center ${
+                        item.color === 'green'
+                          ? 'bg-green-100 text-green-600'
+                          : 'bg-blue-100 text-blue-600'
+                      }`}
+                    >
+                      <Icon name={item.icon} size={24} />
+                    </div>
+                    <h4 className='font-bold text-sm text-gray-800 mb-1'>
+                      {item.name}
+                    </h4>
+                    <span className='text-xs font-bold text-[#4a4b70]'>
+                      {item.price.toLocaleString()} P
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const ProductDetailView = ({ product, onBack, onPurchase }) => {
+        if (!product) return null
+        return (
+          <div className='absolute inset-0 z-[90] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm border-b border-gray-100'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>상품 상세</h1>
+            </header>
+            <div className='flex-1 overflow-y-auto p-6 flex flex-col items-center'>
+              <div
+                className={`w-32 h-32 rounded-full mb-6 flex items-center justify-center text-4xl shadow-lg ${
+                  product.color === 'green'
+                    ? 'bg-green-100 text-green-600'
+                    : 'bg-blue-100 text-blue-600'
+                }`}
+              >
+                <Icon name={product.icon} size={48} />
+              </div>
+              <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+                {product.name}
+              </h2>
+              <p className='text-3xl font-black text-[#4a4b70] mb-8'>
+                {product.price.toLocaleString()} P
+              </p>
+
+              <div className='w-full bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4'>
+                <div className='flex justify-between text-sm'>
+                  <span className='text-gray-500'>유효기간</span>
+                  <span className='font-bold text-gray-800'>
+                    발급일로부터 90일
+                  </span>
+                </div>
+                <div className='flex justify-between text-sm'>
+                  <span className='text-gray-500'>사용처</span>
+                  <span className='font-bold text-gray-800'>전국 매장</span>
+                </div>
+                <div className='border-t border-gray-100 my-2 pt-2'>
+                  <p className='text-xs text-gray-400 leading-relaxed'>
+                    본 쿠폰은 매장 방문 시 사용 가능합니다.
+                    <br />
+                    포인트 결제 후 취소는 불가능합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className='p-4 bg-white border-t border-gray-100'>
+              <button
+                onClick={() => {
+                  onPurchase(`'${product.name}' 교환 완료!`)
+                  onBack()
+                }}
+                className='w-full py-4 bg-[#4a4b70] text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform'
+              >
+                교환하기
+              </button>
+            </div>
+          </div>
+        )
+      }
+
+      const SafeKeeperView = ({ onBack, onSelectProfile, onAdd, profiles }) => {
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-purple-500 text-white p-4 pt-6 flex items-center justify-between shadow-md'>
+              <div className='flex items-center gap-3'>
+                <div className='cursor-pointer' onClick={onBack}>
+                  <Icon name='ChevronLeft' size={24} />
+                </div>
+                <h1 className='text-lg font-bold'>안심이 관리</h1>
+              </div>
+              <div
+                onClick={onAdd}
+                className='cursor-pointer p-1 active:scale-90 transition-transform'
+              >
+                <Icon name='Plus' size={24} />
+              </div>
+            </header>
+            <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+              {profiles.map(profile => (
+                <div
+                  key={profile.id}
+                  onClick={() => onSelectProfile(profile)}
+                  className='bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-transform cursor-pointer'
+                >
+                  <div className='p-4 flex items-center gap-4 border-b border-gray-50'>
+                    <img
+                      src={profile.img}
+                      alt={profile.name}
+                      className='w-14 h-14 rounded-full object-cover bg-gray-100'
+                    />
+                    <div className='flex-1'>
+                      <div className='flex items-center gap-2 mb-1'>
+                        <h3 className='font-bold text-gray-800 text-lg'>
+                          {profile.name}
+                        </h3>
+                        <span className='text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full'>
+                          {profile.relation}
+                        </span>
+                      </div>
+                      <div className='flex items-center gap-3 text-xs'>
+                        <span className='text-green-600 font-bold flex items-center gap-1'>
+                          <Icon name='CheckCircle2' size={10} />{' '}
+                          {profile.status}
+                        </span>
+                        <span className='text-gray-400 flex items-center gap-1'>
+                          <Icon name='Battery' size={10} /> {profile.battery}%
+                        </span>
+                      </div>
+                    </div>
+                    <Icon
+                      name='ChevronRight'
+                      size={20}
+                      className='text-gray-300'
+                    />
+                  </div>
+                  <div className='p-3 bg-gray-50 flex justify-between items-center text-xs px-5'>
+                    <span className='text-gray-500'>최근 위치</span>
+                    <span className='font-bold text-gray-700'>
+                      {profile.location}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              <div
+                onClick={onAdd}
+                className='border-2 border-dashed border-gray-300 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors'
+              >
+                <div className='w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2'>
+                  <Icon name='Plus' size={20} />
+                </div>
+                <span className='text-sm font-bold'>새 안심이 등록하기</span>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      // --- 수정된 SafeZoneView (안심존 관리: 필터링 및 지도 표시 - props 적용) ---
+      const SafeZoneView = ({
+        onBack,
+        safeZones,
+        onToggleZone,
+        onSelectZone
+      }) => {
+        const [activeTab, setActiveTab] = useState('child')
+
+        const filteredZones = safeZones.filter(z => z.type === activeTab)
+
+        return (
+          <div className='absolute inset-0 z-[70] bg-[#f5f6f8] flex flex-col animate-fade-in'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex items-center gap-3 shadow-sm'>
+              <div className='cursor-pointer' onClick={onBack}>
+                <Icon name='ChevronLeft' size={24} />
+              </div>
+              <h1 className='text-lg font-bold'>안심존 관리</h1>
+            </header>
+
+            <div className='bg-white px-4 pb-4 pt-2'>
+              <div className='flex bg-gray-100 p-1 rounded-xl'>
+                {['자녀', '부모님', '반려동물'].map(tab => {
+                  const value =
+                    tab === '자녀'
+                      ? 'child'
+                      : tab === '부모님'
+                      ? 'parent'
+                      : 'pet'
+                  const isActive = activeTab === value
+                  return (
+                    <button
+                      key={value}
+                      onClick={() => setActiveTab(value)}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                        isActive
+                          ? 'bg-white text-[#4a4b70] shadow-sm'
+                          : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      <Icon
+                        name={
+                          value === 'child'
+                            ? 'User'
+                            : value === 'parent'
+                            ? 'Users'
+                            : 'ShieldAlert'
+                        }
+                        size={12}
+                        className='mr-1'
+                      />
+                      {tab}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className='flex-1 overflow-y-auto p-4 pb-24'>
+              {/* Map Preview: Filtered Zones Display */}
+              <div className='bg-gray-200 h-48 rounded-2xl mb-6 relative overflow-hidden flex items-center justify-center border border-gray-300/50 shadow-inner'>
+                <div
+                  className='absolute inset-0 opacity-20'
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)',
+                    backgroundSize: '20px 20px'
+                  }}
+                ></div>
+
+                {filteredZones.map(zone => (
+                  <div
+                    key={zone.id}
+                    className={`absolute flex items-center justify-center rounded-full border transition-all duration-300 ease-in-out ${
+                      zone.mapPos.size
+                    } 
+                          ${
+                            zone.active
+                              ? 'border-green-500/30 bg-green-500/10'
+                              : 'border-gray-400/50 bg-gray-400/10 grayscale opacity-40'
+                          }`}
+                    style={{
+                      top: zone.mapPos.top,
+                      left: zone.mapPos.left,
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                  >
+                    {/* Smaller Icon inside the zone circle */}
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                        zone.active
+                          ? 'bg-green-500/20 text-green-700'
+                          : 'bg-gray-500/20 text-gray-500'
+                      }`}
+                    >
+                      <Icon name={zone.icon} size={10} />
+                    </div>
+                  </div>
+                ))}
+
+                <div className='absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm text-gray-600 border border-white flex items-center gap-1'>
+                  <Icon name='MapPin' size={12} /> {filteredZones.length}개 구역
+                </div>
+              </div>
+
+              <h3 className='font-bold text-gray-800 mb-3 text-sm px-1'>
+                등록된 안심존 (
+                {activeTab === 'child'
+                  ? '자녀'
+                  : activeTab === 'parent'
+                  ? '부모님'
+                  : '반려동물'}
+                )
+              </h3>
+
+              <div className='space-y-3'>
+                {filteredZones.map(zone => (
+                  <div
+                    key={zone.id}
+                    onClick={() => onSelectZone(zone)}
+                    className='bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 transition-transform active:scale-[0.99] cursor-pointer'
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 ${
+                        zone.active
+                          ? 'bg-green-50 text-green-600'
+                          : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <Icon name={zone.icon} size={20} />
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <div className='flex items-center justify-between'>
+                        <h4
+                          className={`font-bold text-sm truncate ${
+                            zone.active ? 'text-gray-800' : 'text-gray-400'
+                          }`}
+                        >
+                          {zone.name}
+                        </h4>
+                      </div>
+                      <p className='text-xs text-gray-400 mt-0.5 truncate'>
+                        {zone.address}
+                      </p>
+                      <div className='flex items-center gap-2 mt-2'>
+                        <span className='text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100 font-medium'>
+                          반경 {zone.radius}
+                        </span>
+                        <span
+                          className={`text-[10px] flex items-center gap-1 ${
+                            zone.active
+                              ? 'text-green-600 font-bold'
+                              : 'text-gray-300'
+                          }`}
+                        >
+                          <Icon name='Bell' size={10} />{' '}
+                          {zone.active ? '알림 ON' : '알림 OFF'}
+                        </span>
+                      </div>
+                    </div>
+                    <div
+                      onClick={e => {
+                        e.stopPropagation()
+                        onToggleZone(zone.id)
+                      }}
+                      className={`w-12 h-7 rounded-full relative cursor-pointer transition-colors duration-300 ease-in-out shrink-0 ${
+                        zone.active ? 'bg-green-500' : 'bg-gray-300'
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ease-in-out ${
+                          zone.active ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+                {filteredZones.length === 0 && (
+                  <div className='text-center py-10 text-gray-400 text-sm'>
+                    등록된 안심존이 없습니다.
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className='absolute bottom-6 right-6 z-20'>
+              <button className='w-14 h-14 bg-[#4a4b70] hover:bg-[#3d3e5c] rounded-full shadow-xl shadow-[#4a4b70]/40 flex items-center justify-center text-white active:scale-90 transition-transform'>
+                <Icon name='Plus' size={24} />
+              </button>
+            </div>
+          </div>
+        )
+      }
+
+      // --- MapView 컴포넌트 ---
+      const MapView = ({ onAction, onNavigate, onMarkerSelect, safeZones }) => {
+        const [listFilter, setListFilter] = useState('전체')
+        const [mapFilter, setMapFilter] = useState('전체')
+        const [sortMode, setSortMode] = useState('최신')
+        const [isTracking, setIsTracking] = useState(false)
+        const [zoom, setZoom] = useState(1)
+
+        const [pan, setPan] = useState({ x: 0, y: 0 })
+        const [isDragging, setIsDragging] = useState(false)
+        const dragStart = useRef({ x: 0, y: 0 })
+
+        const handleMouseDown = e => {
+          setIsDragging(true)
+          dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y }
+        }
+
+        const handleMouseMove = e => {
+          if (!isDragging) return
+          e.preventDefault()
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY
+          const x = clientX - dragStart.current.x
+          const y = clientY - dragStart.current.y
+          setPan({ x, y })
+        }
+
+        const handleMouseUp = () => {
+          setIsDragging(false)
+        }
+
+        const handleTouchStart = e => {
+          setIsDragging(true)
+          const touch = e.touches[0]
+          dragStart.current = {
+            x: touch.clientX - pan.x,
+            y: touch.clientY - pan.y
+          }
+        }
+
+        const handleWheel = e => {
+          const zoomSensitivity = 0.001
+          const newZoom = zoom - e.deltaY * zoomSensitivity
+          setZoom(Math.min(Math.max(newZoom, 0.5), 3))
+        }
+
+        const toggleTracking = () => {
+          setIsTracking(!isTracking)
+          onAction(isTracking ? '탐지 모드 종료' : 'Track-FOM 가동')
+        }
+        const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3))
+        const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5))
+
+        const filteredList = useMemo(() => {
+          let data = [...missingListData]
+          if (listFilter !== '전체')
+            data = data.filter(item => item.type === listFilter)
+          if (sortMode === '찾음') {
+            data = data.filter(item => item.status === '찾음')
+          } else {
+            data = data.filter(item => item.status === '실종')
+            if (sortMode === '거리')
+              data.sort((a, b) => a.distance - b.distance)
+            else if (sortMode === '현상금')
+              data.sort((a, b) => b.reward - a.reward)
+            else data.sort((a, b) => b.timestamp - a.timestamp)
+          }
+          return data
+        }, [listFilter, sortMode])
+
+        const visibleMarkers = useMemo(() => {
+          const list = missingListData.map(item => ({
+            ...item,
+            fomScore: calculateFomScore(item)
+          }))
+          const jimin = {
+            id: 'jimin',
+            type: '사람',
+            name: '지민',
+            pos: { top: '45%', left: '48%' },
+            img: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jimin',
+            isSafe: true,
+            fomScore: 100
+          }
+          const allMarkers = [jimin, ...list].filter(m => m.status !== '찾음')
+          if (mapFilter === '전체') return allMarkers
+          return allMarkers.filter(m => m.type === mapFilter)
+        }, [mapFilter])
+
+        return (
+          <div className='relative h-full w-full flex flex-col bg-[#f5f6f8]'>
+            <header className='bg-[#464769] text-white p-4 pt-6 flex justify-between items-center z-30 shadow-md flex-none'>
+              <div
+                className='flex items-center gap-2 cursor-pointer'
+                onClick={() => onAction('홈 이동')}
+              >
+                <div className='w-6 h-6 border-2 border-white rounded-md flex items-center justify-center'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
+                </div>
+                <span className='font-bold text-lg'>LostFindUs</span>
+              </div>
+              <div className='flex items-center gap-4'>
+                <div
+                  className='cursor-pointer'
+                  onClick={() => onNavigate('notifications')}
+                >
+                  <Icon name='Bell' size={20} />
+                </div>
+                <Icon name='Menu' size={24} />
+              </div>
+            </header>
+
+            <div className='bg-white z-20 shadow-sm flex-none rounded-b-xl border-b overflow-hidden'>
+              <div className='flex justify-between items-center px-4 py-3'>
+                <div className='flex items-center gap-2 text-gray-800 font-bold text-sm'>
+                  <span className='text-[#4a4b70]'>
+                    <Icon name='List' size={16} />
+                  </span>{' '}
+                  실시간 실종 현황 ({filteredList.length})
+                </div>
+                <button
+                  onClick={() => onNavigate('missing-list')}
+                  className='text-xs text-gray-500 font-medium flex items-center'
+                >
+                  더보기 <Icon name='ChevronRight' size={12} className='ml-1' />
+                </button>
+              </div>
+              <div className='flex overflow-x-auto gap-2 px-4 pb-2 no-scrollbar'>
+                {['전체', '사람', '동물', '물건'].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setListFilter(f)}
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap transition-colors ${
+                      listFilter === f
+                        ? 'bg-[#4a4b70] text-white border-[#4a4b70] shadow-sm'
+                        : 'border-gray-200 text-gray-500 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+              <div className='flex overflow-x-auto gap-2 px-4 pb-4 no-scrollbar border-b border-gray-50 mb-1'>
+                {['최신', '거리', '현상금', '찾음'].map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setSortMode(mode)}
+                    className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1 ${
+                      sortMode === mode
+                        ? 'bg-gray-100 text-[#4a4b70]'
+                        : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                  >
+                    {sortMode === mode && (
+                      <Icon name='CheckCircle2' size={10} />
+                    )}{' '}
+                    {mode === '찾음' ? '찾음' : mode + '순'}
+                  </button>
+                ))}
+              </div>
+              <div className='flex overflow-x-auto gap-3 px-4 pb-4 no-scrollbar'>
+                {filteredList.length === 0 ? (
+                  <div className='w-full text-center py-4 text-xs text-gray-400'>
+                    해당하는 항목이 없습니다.
+                  </div>
+                ) : (
+                  filteredList.map(item => (
+                    <div
+                      key={item.id}
+                      className={`flex-none w-[180px] border rounded-xl p-2 flex gap-2.5 bg-white shadow-sm transition-all active:scale-95 ${
+                        item.urgent ? 'border-red-100' : 'border-gray-100'
+                      } ${
+                        item.status === '찾음' ? 'opacity-80 bg-gray-50' : ''
+                      }`}
+                      onClick={() => onMarkerSelect(item)}
+                    >
+                      <div className='w-10 h-10 rounded-lg overflow-hidden flex-none bg-gray-50 relative'>
+                        <img
+                          src={item.img}
+                          alt={item.name}
+                          className={`w-full h-full object-cover ${
+                            item.status === '찾음' ? 'grayscale' : ''
+                          }`}
+                        />
+                        {item.urgent && item.status !== '찾음' && (
+                          <span className='absolute top-1 left-1 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold'>
+                            긴급
+                          </span>
+                        )}
+                        {item.status === '찾음' && (
+                          <span className='absolute top-1 left-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold'>
+                            찾음
+                          </span>
+                        )}
+                      </div>
+                      <div className='flex-1 py-0.5 min-w-0'>
+                        <h4 className='font-bold text-gray-800 text-[11px] truncate'>
+                          {item.name}
+                        </h4>
+                        <p className='text-[9px] text-gray-500 truncate'>
+                          {item.location}
+                        </p>
+                        <p
+                          className={`text-[9px] font-bold mt-1 ${
+                            item.status === '찾음'
+                              ? 'text-green-600'
+                              : item.urgent
+                              ? 'text-red-500'
+                              : 'text-[#4a4b70]'
+                          }`}
+                        >
+                          {item.status === '찾음' ? '보호 완료' : item.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`flex-1 relative overflow-hidden bg-[#e0e3e8] ${
+                isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              }`}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleMouseMove}
+              onTouchEnd={handleMouseUp}
+              onWheel={handleWheel}
+            >
+              <div
+                className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${
+                  isTracking ? 'opacity-40' : 'opacity-10'
+                }`}
+              >
+                <div
+                  className={`w-full h-full ease-out origin-center ${
+                    isDragging ? '' : 'transition-transform duration-300'
+                  }`}
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(rgba(74, 75, 112, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(74, 75, 112, 0.2) 1px, transparent 1px)',
+                    backgroundSize: '20px 20px',
+                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`
+                  }}
+                ></div>
+              </div>
+
+              {isTracking && (
+                <div
+                  className={`absolute inset-0 z-10 pointer-events-none overflow-hidden ease-out origin-center ${
+                    isDragging ? '' : 'transition-transform duration-300'
+                  }`}
+                  style={{
+                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`
+                  }}
+                >
+                  <div className='w-[200%] h-1 bg-gradient-to-r from-transparent via-[#4a4b70]/40 to-transparent absolute top-0 left-[-50%] animate-radar-scan'></div>
+                </div>
+              )}
+
+              <div className='absolute top-4 left-4 right-4 flex justify-between z-10 pointer-events-none'>
+                <div
+                  onClick={toggleTracking}
+                  className={`bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 pointer-events-auto border transition-all cursor-pointer ${
+                    isTracking
+                      ? 'text-[#4a4b70] border-[#4a4b70] ring-4 ring-[#4a4b70]/10 scale-105'
+                      : 'text-gray-500 border-white/50'
+                  }`}
+                >
+                  <Icon name='Target' size={14} /> Track-FOM
+                </div>
+                <div className='bg-white/95 backdrop-blur-sm rounded-full shadow-lg flex p-1 pointer-events-auto'>
+                  {['전체', '사람', '동물', '물건'].map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setMapFilter(f)}
+                      className={`text-xs px-3 py-1 rounded-full font-bold ${
+                        mapFilter === f
+                          ? 'bg-[#4a4b70] text-white shadow-inner'
+                          : 'text-gray-500'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className={`absolute inset-0 ease-out origin-center ${
+                  isDragging ? '' : 'transition-transform duration-300'
+                }`}
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`
+                }}
+              >
+                <div className='absolute inset-0 pointer-events-none'>
+                  {safeZones.map(
+                    zone =>
+                      zone.pos && (
+                        <div
+                          key={zone.id}
+                          style={{
+                            top: zone.pos.top,
+                            left: zone.pos.left,
+                            transform: `translate(-50%, -50%) scale(${
+                              1 / zoom
+                            })`
+                          }}
+                          className={`
+                        ${zone.size} absolute rounded-full border-2 
+                        ${
+                          zone.active
+                            ? 'border-green-400 bg-green-50/20 opacity-100'
+                            : 'border-gray-400 bg-gray-500/10 opacity-30 grayscale'
+                        } 
+                        flex items-center justify-center transition-all duration-300
+                      `}
+                        >
+                          <div className='absolute bottom-4 bg-green-600/80 text-white text-[9px] px-2 py-0.5 rounded-full border border-white/20 whitespace-nowrap'>
+                            {zone.name}
+                          </div>
+                        </div>
+                      )
+                  )}
+                </div>
+                <div className='absolute inset-0 pointer-events-none'>
+                  {visibleMarkers.map(m => {
+                    const opacity = isTracking
+                      ? Math.max(0.3, m.fomScore / 100)
+                      : 1
+                    const blurAmount = isTracking
+                      ? Math.max(0, (100 - m.fomScore) / 12)
+                      : 0
+                    const baseScale = isTracking
+                      ? 0.85 + (m.fomScore / 100) * 0.3
+                      : 1
+                    const finalScale = baseScale * (1 / zoom)
+
+                    return (
+                      <div
+                        key={m.id}
+                        style={{
+                          top: m.pos.top,
+                          left: m.pos.left,
+                          opacity: opacity,
+                          filter: `blur(${blurAmount}px)`,
+                          transform: `translate(-50%, -50%) scale(${finalScale})`
+                        }}
+                        className='absolute pointer-events-auto flex flex-col items-center group cursor-pointer transition-all duration-700 ease-in-out'
+                        onClick={() => onMarkerSelect(m)}
+                      >
+                        {isTracking && m.fomScore > 80 && (
+                          <div className='absolute inset-0 w-16 h-16 -translate-x-2 -translate-y-2 rounded-full bg-[#4a4b70]/10 border border-[#4a4b70]/30 animate-ping-slow'></div>
+                        )}
+                        <div
+                          className={`p-0.5 bg-white rounded-full shadow-2xl border-2 transition-transform group-hover:scale-110 ${
+                            m.isSafe ? 'border-green-500' : 'border-red-500'
+                          } ${
+                            m.fomScore > 90 ? 'ring-4 ring-[#4a4b70]/20' : ''
+                          }`}
+                        >
+                          <img
+                            src={
+                              m.img ||
+                              `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.name}`
+                            }
+                            className={`w-10 h-10 rounded-full ${
+                              isTracking && m.fomScore > 70
+                                ? 'animate-pulse'
+                                : ''
+                            }`}
+                            alt={m.name}
+                          />
+                        </div>
+                        <div
+                          className={`mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-white shadow-sm border border-white/30 ${
+                            m.isSafe ? 'bg-green-600' : 'bg-red-500'
+                          }`}
+                        >
+                          {m.name}
+                        </div>
+                        {isTracking && (
+                          <div className='absolute -top-12 bg-black/80 text-[8px] text-white p-1.5 rounded-lg flex flex-col gap-0.5 border border-white/20 backdrop-blur-sm shadow-xl'>
+                            <div className='flex items-center gap-1'>
+                              <span className='text-blue-400'>
+                                <Icon name='Wifi' size={8} />
+                              </span>{' '}
+                              {m.rssi}dBm
+                            </div>
+                            <div className='flex items-center gap-1'>
+                              <span className='text-green-400'>
+                                <Icon name='Layers' size={8} />
+                              </span>{' '}
+                              {m.collectors} EA
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className='absolute bottom-[100px] right-4 flex flex-col gap-3 z-10'>
+                <button
+                  onClick={handleZoomIn}
+                  className='bg-white p-3 rounded-full shadow-xl text-gray-600 active:scale-90 transition-all border border-gray-100 flex items-center justify-center'
+                >
+                  <Icon name='Plus' size={20} />
+                </button>
+                <button
+                  onClick={handleZoomOut}
+                  className='bg-white p-3 rounded-full shadow-xl text-gray-600 active:scale-90 transition-all border border-gray-100 flex items-center justify-center'
+                >
+                  <Icon name='Minus' size={20} />
+                </button>
+                <button
+                  onClick={() => onAction('실시간 AR 탐지 모드')}
+                  className='bg-[#4a4b70] text-white p-3.5 rounded-full shadow-2xl active:scale-90 mt-1 shadow-[#4a4b70]/40 flex items-center justify-center'
+                >
+                  <Icon name='Camera' size={20} />
+                </button>
+              </div>
+              <div className='absolute bottom-4 left-4 right-4 z-20'>
+                <button
+                  onClick={() => onNavigate('emergency-request')}
+                  className='w-full bg-[#df3333] hover:bg-[#cc2e2e] active:scale-[0.98] text-white rounded-2xl py-4 font-bold shadow-2xl flex items-center justify-center gap-2 border-b-4 border-red-700/50'
+                >
+                  <Icon name='AlertCircle' size={20} /> 긴급 찾기 요청
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const ChatView = ({ onSelect }) => {
+        return (
+          <div className='flex-1 bg-white overflow-y-auto'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex justify-between items-center sticky top-0 z-10 border-b border-gray-100'>
+              <h1 className='text-xl font-bold'>채팅</h1>
+              <Icon name='Plus' size={24} className='text-gray-400' />
+            </header>
+            <div className='divide-y divide-gray-50'>
+              {chatListData.map(chat => (
+                <div
+                  key={chat.id}
+                  onClick={() => onSelect(chat)}
+                  className='p-4 flex gap-4 hover:bg-gray-50 cursor-pointer transition-colors'
+                >
+                  <div className='relative w-12 h-12 flex-none'>
+                    <img
+                      src={chat.img}
+                      alt={chat.name}
+                      className='w-full h-full rounded-full object-cover bg-gray-100'
+                    />
+                    {chat.unread > 0 && (
+                      <span className='absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold'>
+                        {chat.unread}
+                      </span>
+                    )}
+                  </div>
+                  <div className='flex-1 min-w-0'>
+                    <div className='flex justify-between items-start mb-0.5'>
+                      <h3 className='font-bold text-gray-900 truncate'>
+                        {chat.name}
+                      </h3>
+                      <span className='text-[10px] text-gray-400 whitespace-nowrap'>
+                        {chat.time}
+                      </span>
+                    </div>
+                    <p className='text-sm text-gray-500 truncate'>{chat.msg}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      const RewardsView = ({ onSelect, onNavigate }) => {
+        return (
+          <div className='flex-1 bg-[#f5f6f8] overflow-y-auto'>
+            <header className='bg-[#4a4b70] text-white p-6 pb-12 rounded-b-[2rem] shadow-lg relative z-10'>
+              <div className='flex justify-between items-center mb-6'>
+                <h1 className='text-xl font-bold'>보상 센터</h1>
+                <div className='bg-white/20 p-2 rounded-full cursor-pointer'>
+                  <Icon name='Info' size={20} />
+                </div>
+              </div>
+              <div className='text-center'>
+                <p className='text-blue-100 text-sm mb-1'>나의 보유 포인트</p>
+                <h2 className='text-4xl font-black mb-4'>12,500 P</h2>
+                <div className='flex gap-2 justify-center'>
+                  <div
+                    onClick={() => onNavigate('point-exchange')}
+                    className='inline-block bg-white text-[#4a4b70] px-4 py-2 rounded-full font-bold text-xs shadow-md active:scale-95 transition-transform cursor-pointer neon-border'
+                  >
+                    포인트 교환
+                  </div>
+                  <div
+                    onClick={() => onNavigate('escrow-list')}
+                    className='inline-block bg-[#1a1b2e] text-white border border-[#4a4b70] px-4 py-2 rounded-full font-bold text-xs shadow-md active:scale-95 transition-transform cursor-pointer flex items-center gap-1'
+                  >
+                    <Icon name='ShieldCheck' size={12} /> 안심 거래
+                  </div>
+                </div>
+              </div>
+            </header>
+            <div className='px-4 -mt-6 relative z-20 mb-4'>
+              <div className='bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-around'>
+                <div
+                  className='text-center cursor-pointer active:scale-95 transition-transform'
+                  onClick={() => onNavigate('ranking')}
+                >
+                  <div className='w-10 h-10 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-2 neon-border'>
+                    <Icon name='Trophy' size={20} />
+                  </div>
+                  <span className='text-xs font-bold text-gray-600'>랭킹</span>
+                </div>
+                <div
+                  className='text-center cursor-pointer active:scale-95 transition-transform'
+                  onClick={() => onNavigate('mission')}
+                >
+                  <div className='w-10 h-10 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-2 neon-border'>
+                    <Icon name='Star' size={20} />
+                  </div>
+                  <span className='text-xs font-bold text-gray-600'>미션</span>
+                </div>
+                <div
+                  className='text-center cursor-pointer active:scale-95 transition-transform'
+                  onClick={() => onNavigate('wallet')}
+                >
+                  <div className='w-10 h-10 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-2 neon-border'>
+                    <Icon name='Wallet' size={20} />
+                  </div>
+                  <span className='text-xs font-bold text-gray-600'>지갑</span>
+                </div>
+              </div>
+            </div>
+            <div className='px-4 pb-20'>
+              <h3 className='font-bold text-gray-800 mb-3 px-1'>최근 활동</h3>
+              <div className='space-y-3'>
+                {rewardHistoryData.map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => onSelect(item)}
+                    className='bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 cursor-pointer active:scale-95 transition-transform'
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        item.type === 'earn'
+                          ? 'bg-blue-50 text-blue-500'
+                          : 'bg-orange-50 text-orange-500'
+                      }`}
+                    >
+                      <Icon
+                        name={item.type === 'earn' ? 'Coins' : 'Gift'}
+                        size={20}
+                      />
+                    </div>
+                    <div className='flex-1'>
+                      <h4 className='font-bold text-gray-800 text-sm'>
+                        {item.title}
+                      </h4>
+                      <p className='text-[10px] text-gray-400'>{item.date}</p>
+                    </div>
+                    <span
+                      className={`font-bold text-sm ${
+                        item.type === 'earn'
+                          ? 'text-blue-600'
+                          : 'text-orange-500'
+                      }`}
+                    >
+                      {item.type === 'earn' ? '+' : ''}
+                      {item.points.toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const MenuSection = ({ title, items, onItemClick }) => {
+        return (
+          <div className='bg-white mb-3 p-4 pb-2 border-b border-gray-100 last:mb-0 last:border-0'>
+            <h3 className='text-xs font-bold text-gray-400 mb-2'>{title}</h3>
+            <div>
+              {items.map((item, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => onItemClick(item)}
+                  className='flex justify-between items-center py-3.5 border-b border-gray-50 last:border-0 cursor-pointer active:bg-gray-50'
+                >
+                  <span className='text-sm font-medium text-gray-700'>
+                    {item}
+                  </span>
+                  <Icon
+                    name='ChevronRight'
+                    size={16}
+                    className='text-gray-300'
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      const MenuView = ({ setSubView, onAction }) => {
+        const handleItemClick = item => {
+          const map = {
+            '제보 내역': 'my-reports',
+            '관심 목록': 'my-watchlist',
+            '포인트 내역': 'my-points',
+            공지사항: 'notice',
+            '자주 묻는 질문': 'faq',
+            '1:1 문의': 'qna',
+            이용약관: 'terms',
+            '개인정보 처리방침': 'privacy'
+          }
+          if (map[item]) {
+            setSubView(map[item])
+          } else {
+            onAction(`${item} 화면으로 이동합니다.`)
+          }
+        }
+
+        return (
+          <div className='flex-1 bg-white overflow-y-auto'>
+            <header className='bg-white text-gray-800 p-4 pt-6 flex justify-between items-center sticky top-0 z-10 border-b border-gray-100'>
+              <h1 className='text-xl font-bold'>전체 메뉴</h1>
+              <div
+                onClick={() => setSubView('settings')}
+                className='cursor-pointer'
+              >
+                <Icon name='Settings' size={24} className='text-gray-400' />
+              </div>
+            </header>
+            <div className='p-6 pb-8 border-b border-gray-100'>
+              <div className='flex items-center gap-4 mb-4'>
+                <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400'>
+                  <Icon name='User' size={32} />
+                </div>
+                <div>
+                  <div className='flex items-center gap-2'>
+                    <h2 className='text-xl font-bold text-gray-900'>김시민</h2>
+                    <span className='text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100'>
+                      MY
+                    </span>
+                  </div>
+                  <p className='text-sm text-gray-500 mt-0.5'>
+                    Lv.3 시민 감시단
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <button
+                  onClick={() => setSubView('my-profile')}
+                  className='flex-1 bg-gray-50 text-gray-600 text-xs font-bold py-2.5 rounded-lg border border-gray-200 active:bg-gray-100 transition-colors'
+                >
+                  내 정보
+                </button>
+                <button
+                  onClick={() => setSubView('safe-keeper')}
+                  className='flex-1 bg-gray-50 text-gray-600 text-xs font-bold py-2.5 rounded-lg border border-gray-200 active:bg-gray-100 transition-colors'
+                >
+                  가족 관리
+                </button>
+              </div>
+            </div>
+            <div className='p-6 border-b border-gray-100'>
+              <h3 className='text-xs font-bold text-gray-900 mb-4'>
+                주요 서비스
+              </h3>
+              <div className='grid grid-cols-4 gap-2 text-center'>
+                <div
+                  onClick={() => setSubView('emergency-sos')}
+                  className='flex flex-col items-center gap-2 cursor-pointer active:opacity-70'
+                >
+                  <div className='w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center border border-red-100'>
+                    <Icon name='AlertTriangle' size={20} />
+                  </div>
+                  <span className='text-[11px] font-medium text-gray-600'>
+                    긴급신고
+                  </span>
+                </div>
+                <div
+                  onClick={() => setSubView('safe-return')}
+                  className='flex flex-col items-center gap-2 cursor-pointer active:opacity-70'
+                >
+                  <div className='w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center border border-green-100'>
+                    <Icon name='Shield' size={20} />
+                  </div>
+                  <span className='text-[11px] font-medium text-gray-600'>
+                    안심귀가
+                  </span>
+                </div>
+                <div
+                  onClick={() => setSubView('safe-zone')}
+                  className='flex flex-col items-center gap-2 cursor-pointer active:opacity-70'
+                >
+                  <div className='w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center border border-blue-100'>
+                    <Icon name='MapPin' size={20} />
+                  </div>
+                  <span className='text-[11px] font-medium text-gray-600'>
+                    안심존
+                  </span>
+                </div>
+                <div
+                  onClick={() => setSubView('safe-keeper')}
+                  className='flex flex-col items-center gap-2 cursor-pointer active:opacity-70'
+                >
+                  <div className='w-12 h-12 bg-purple-50 text-purple-500 rounded-2xl flex items-center justify-center border border-purple-100'>
+                    <Icon name='Smartphone' size={20} />
+                  </div>
+                  <span className='text-[11px] font-medium text-gray-600'>
+                    안심이 관리
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className='bg-gray-50/50'>
+              <MenuSection
+                title='나의 활동'
+                items={['제보 내역', '관심 목록', '포인트 내역']}
+                onItemClick={handleItemClick}
+              />
+              <MenuSection
+                title='고객 지원'
+                items={['공지사항', '자주 묻는 질문', '1:1 문의']}
+                onItemClick={handleItemClick}
+              />
+              <MenuSection
+                title='앱 정보'
+                items={['이용약관', '개인정보 처리방침']}
+                onItemClick={handleItemClick}
+              />
+            </div>
+            <div className='h-20'></div>
+          </div>
+        )
+      }
+
+      const App = () => {
+        const [activeTab, setActiveTab] = useState('track')
+        const [subView, setSubView] = useState(null)
+        const [toastMessage, setToastMessage] = useState('')
+        const [activeAlertData, setActiveAlertData] = useState(null)
+        const [activeRewardData, setActiveRewardData] = useState(null)
+        const [activeChatData, setActiveChatData] = useState(null)
+        const [selectedProduct, setSelectedProduct] = useState(null)
+        const [selectedEscrow, setSelectedEscrow] = useState(null)
+
+        // 안심존 상태 (지도 및 리스트 동기화용)
+        const [safeZones, setSafeZones] = useState(safeZonesData)
+        // 안심존 상세 상태
+        const [selectedSafeZone, setSelectedSafeZone] = useState(null)
+        // [신규] 안심이 상세 상태
+        const [selectedKeeperProfile, setSelectedKeeperProfile] = useState(null)
+        // [신규] 안심이 리스트 상태
+        const [keeperProfiles, setKeeperProfiles] =
+          useState(managedProfilesData)
+
+        const handleToggleSafeZone = id => {
+          setSafeZones(prevZones =>
+            prevZones.map(zone =>
+              zone.id === id ? { ...zone, active: !zone.active } : zone
+            )
+          )
+        }
+
+        const handleDeleteSafeZone = id => {
+          setSafeZones(prevZones => prevZones.filter(z => z.id !== id))
+          setSubView('safe-zone')
+          showToast('안심존이 삭제되었습니다.')
+        }
+
+        const handleAddKeeper = newProfile => {
+          setKeeperProfiles([...keeperProfiles, newProfile])
+          setSubView('safe-keeper') // 리스트로 복귀
+          showToast(`${newProfile.name}님이 등록되었습니다.`)
+        }
+
+        const showToast = msg => {
+          setToastMessage(msg)
+          setTimeout(() => setToastMessage(''), 2500)
+        }
+        const handleMarkerSelect = data => {
+          setActiveAlertData(data)
+          setSubView('bystander-alert-detail')
+        }
+        const handleSimulateAlert = data => {
+          setActiveAlertData(data)
+          setSubView('bystander-alert-detail')
+          setActiveTab('track')
+        }
+
+        return (
+          <div className='min-h-screen bg-gray-900 sm:bg-gray-200 flex justify-center font-sans overflow-hidden'>
+            <div className='w-full max-w-md bg-white h-screen sm:h-[90vh] sm:mt-[5vh] sm:rounded-[2.5rem] flex flex-col relative overflow-hidden shadow-2xl sm:border-[10px] sm:border-gray-800'>
+              {toastMessage && (
+                <div className='absolute top-20 left-1/2 transform -translate-x-1/2 bg-black/85 text-white px-6 py-3 rounded-full shadow-2xl z-[150] text-sm flex items-center gap-3 animate-fade-in border border-white/10 backdrop-blur-md whitespace-nowrap'>
+                  <span className='text-blue-400'>
+                    <Icon name='Info' size={16} />
+                  </span>{' '}
+                  {toastMessage}
+                </div>
+              )}
+
+              {subView === 'missing-list' && (
+                <MissingListView
+                  onBack={() => setSubView(null)}
+                  onAction={setSubView}
+                  onMarkerSelect={handleMarkerSelect}
+                />
+              )}
+              {/* --- 신규 메뉴 연결 --- */}
+              {subView === 'my-profile' && (
+                <MyProfileView
+                  onBack={() => setSubView(null)}
+                  onComplete={showToast}
+                />
+              )}
+              {subView === 'my-reports' && (
+                <MyReportsView onBack={() => setSubView(null)} />
+              )}
+              {subView === 'my-watchlist' && (
+                <MissingListView
+                  onBack={() => setSubView(null)}
+                  onAction={setSubView}
+                  onMarkerSelect={handleMarkerSelect}
+                  isWatchlist={true}
+                  title='관심 목록'
+                />
+              )}
+              {subView === 'my-points' && (
+                <MyPointHistoryView onBack={() => setSubView(null)} />
+              )}
+
+              {/* Reward Sub-views */}
+              {subView === 'ranking' && (
+                <RankingView onBack={() => setSubView(null)} />
+              )}
+              {subView === 'mission' && (
+                <MissionView onBack={() => setSubView(null)} />
+              )}
+              {subView === 'wallet' && (
+                <WalletView onBack={() => setSubView(null)} />
+              )}
+              {subView === 'point-exchange' && (
+                <PointExchangeView
+                  onBack={() => setSubView(null)}
+                  onSelectProduct={item => {
+                    setSelectedProduct(item)
+                    setSubView('product-detail')
+                  }}
+                />
+              )}
+              {subView === 'product-detail' && (
+                <ProductDetailView
+                  product={selectedProduct}
+                  onBack={() => setSubView('point-exchange')}
+                  onPurchase={showToast}
+                />
+              )}
+              {subView === 'escrow-list' && (
+                <EscrowListView
+                  onBack={() => setSubView('rewards')}
+                  onSelect={item => {
+                    setSelectedEscrow(item)
+                    setSubView('escrow-detail')
+                  }}
+                />
+              )}
+              {subView === 'escrow-detail' && (
+                <EscrowDetailView
+                  transaction={selectedEscrow}
+                  onBack={() => setSubView('escrow-list')}
+                  onRelease={showToast}
+                />
+              )}
+
+              {/* --- Settings --- */}
+              {subView === 'settings' && (
+                <SettingsView onBack={() => setSubView(null)} />
+              )}
+
+              {['notice', 'faq', 'qna', 'terms', 'privacy'].includes(
+                subView
+              ) && (
+                <GenericTextView
+                  type={subView}
+                  title={
+                    {
+                      notice: '공지사항',
+                      faq: '자주 묻는 질문',
+                      qna: '1:1 문의',
+                      terms: '이용약관',
+                      privacy: '개인정보 처리방침'
+                    }[subView]
+                  }
+                  onBack={() => setSubView(null)}
+                />
+              )}
+              {/* --------------------- */}
+
+              {subView === 'emergency-request' && (
+                <EmergencySearchRequestView
+                  onBack={() => setSubView(null)}
+                  onComplete={showToast}
+                  onSimulate={handleSimulateAlert}
+                />
+              )}
+              {subView === 'emergency-sos' && (
+                <EmergencySOSView
+                  onBack={() => setSubView(null)}
+                  onComplete={showToast}
+                  onSimulate={handleSimulateAlert}
+                />
+              )}
+              {subView === 'bystander-alert-detail' && (
+                <BystanderAlertDetailView
+                  onBack={() => setSubView(null)}
+                  onNavigate={setSubView}
+                  alertData={activeAlertData}
+                />
+              )}
+              {subView === 'report-process' && (
+                <ReportProcessView
+                  onClose={() => setSubView(null)}
+                  alertData={activeAlertData}
+                  onComplete={showToast}
+                />
+              )}
+              {subView === 'reward-detail' && (
+                <RewardDetailView
+                  onBack={() => setSubView(null)}
+                  data={activeRewardData}
+                />
+              )}
+              {subView === 'chat-detail' && (
+                <ChatDetailView
+                  onBack={() => setSubView(null)}
+                  chatData={activeChatData}
+                />
+              )}
+              {subView === 'notifications' && (
+                <NotificationView onBack={() => setSubView(null)} />
+              )}
+              {subView === 'safe-return' && (
+                <SafeReturnView onBack={() => setSubView(null)} />
+              )}
+              {subView === 'safe-zone' && (
+                <SafeZoneView
+                  onBack={() => setSubView(null)}
+                  safeZones={safeZones}
+                  onToggleZone={handleToggleSafeZone}
+                  onSelectZone={zone => {
+                    setSelectedSafeZone(zone)
+                    setSubView('safe-zone-detail')
+                  }}
+                />
+              )}
+              {subView === 'safe-zone-detail' && (
+                <SafeZoneDetailView
+                  zone={selectedSafeZone}
+                  onBack={() => setSubView('safe-zone')}
+                  onDelete={handleDeleteSafeZone}
+                />
+              )}
+              {subView === 'safe-keeper' && (
+                <SafeKeeperView
+                  onBack={() => setSubView(null)}
+                  onSelectProfile={profile => {
+                    setSelectedKeeperProfile(profile)
+                    setSubView('safe-keeper-detail')
+                  }}
+                  onAdd={() => setSubView('add-safe-keeper')}
+                  profiles={keeperProfiles}
+                />
+              )}
+              {subView === 'add-safe-keeper' && (
+                <AddSafeKeeperView
+                  onBack={() => setSubView('safe-keeper')}
+                  onComplete={handleAddKeeper}
+                />
+              )}
+              {subView === 'safe-keeper-detail' && (
+                <SafeKeeperDetailView
+                  profile={selectedKeeperProfile}
+                  onBack={() => setSubView('safe-keeper')}
+                />
+              )}
+
+              <div className='flex-1 w-full relative overflow-hidden flex flex-col'>
+                {activeTab === 'track' && (
+                  <MapView
+                    onAction={setSubView}
+                    onNavigate={setSubView}
+                    onMarkerSelect={handleMarkerSelect}
+                    safeZones={safeZones}
+                  />
+                )}
+                {activeTab === 'chat' && (
+                  <ChatView
+                    onSelect={chat => {
+                      setActiveChatData(chat)
+                      setSubView('chat-detail')
+                    }}
+                  />
+                )}
+                {activeTab === 'rewards' && (
+                  <RewardsView
+                    onSelect={item => {
+                      setActiveRewardData(item)
+                      setSubView('reward-detail')
+                    }}
+                    onNavigate={setSubView}
+                  />
+                )}
+                {activeTab === 'menu' && (
+                  <MenuView setSubView={setSubView} onAction={showToast} />
+                )}
+              </div>
+
+              <div className='bg-white border-t flex justify-around py-3 pb-8 z-50 shadow-[0_-2px_15px_rgba(0,0,0,0.05)] flex-none relative'>
+                <div
+                  onClick={() => {
+                    setActiveTab('track')
+                    setSubView(null)
+                  }}
+                  className={`flex flex-col items-center cursor-pointer transition-all ${
+                    activeTab === 'track'
+                      ? 'text-[#4a4b70] scale-110'
+                      : 'text-gray-400'
+                  }`}
+                >
+                  <Icon name='Send' size={24} />
+                  <span className='text-[10px] mt-1.5 font-bold'>홈</span>
+                </div>
+                <div
+                  onClick={() => {
+                    setActiveTab('chat')
+                    setSubView(null)
+                  }}
+                  className={`flex flex-col items-center cursor-pointer transition-all ${
+                    activeTab === 'chat'
+                      ? 'text-[#4a4b70] scale-110'
+                      : 'text-gray-400'
+                  }`}
+                >
+                  <Icon name='MessageCircle' size={24} />
+                  <span className='text-[10px] mt-1.5 font-bold'>채팅</span>
+                </div>
+                <div
+                  onClick={() => {
+                    setActiveTab('rewards')
+                    setSubView(null)
+                  }}
+                  className={`flex flex-col items-center cursor-pointer transition-all ${
+                    activeTab === 'rewards'
+                      ? 'text-[#4a4b70] scale-110'
+                      : 'text-gray-400'
+                  }`}
+                >
+                  <Icon name='Gift' size={24} />
+                  <span className='text-[10px] mt-1.5 font-bold'>보상</span>
+                </div>
+                <div
+                  onClick={() => {
+                    setActiveTab('menu')
+                    setSubView(null)
+                  }}
+                  className={`flex flex-col items-center cursor-pointer transition-all ${
+                    activeTab === 'menu'
+                      ? 'text-[#4a4b70] scale-110'
+                      : 'text-gray-400'
+                  }`}
+                >
+                  <Icon name='Grid' size={24} />
+                  <span className='text-[10px] mt-1.5 font-bold'>전체</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById('root'))
+      root.render(<App />)
+    </script>
+  </body>
+</html>
