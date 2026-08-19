@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LostFindUs 시뮬레이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #cbd5e1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .mobile-frame {
+            width: 100%;
+            max-width: 400px;
+            height: 800px;
+            background-color: #f8fafc;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 2.5rem;
+            border: 8px solid #1e293b;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animation */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            80% { transform: scale(2.5); opacity: 0; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+        .pulse-active::before {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-in {
+            animation: slideInUp 0.3s ease-out forwards;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .animate-shake {
+            animation: shake 0.2s ease-in-out 0s 2;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-frame">
+        
+        <!-- Header -->
+        <div class="pt-12 pb-3 px-5 bg-white shadow-sm z-10 flex justify-between items-center">
+            <h1 class="text-xl font-black text-blue-900 tracking-tight">LostFindUs</h1>
+            <div id="header-role-badge" class="hidden text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded"></div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-y-auto hide-scrollbar relative">
+            
+            <!-- ==========================================
+                 TAB 1: 동네안심 (Gamification)
+            =========================================== -->
+            <div id="tab-gamification" class="tab-content active p-4 pb-24">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">연남동 안심 울타리</h2>
+                        <p class="text-sm text-gray-500">오늘도 동네의 안전을 지켜주세요!</p>
+                    </div>
+                </div>
+
+                <!-- 내 정보 카드 -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 relative overflow-hidden">
+                    <div id="patrol-bg-effect" class="absolute inset-0 bg-blue-50 opacity-0 transition-opacity duration-500"></div>
+                    <div class="flex items-center gap-4 mb-4 relative z-10">
+                        <div id="avatar-bg" class="w-14 h-14 rounded-full flex items-center justify-center border-4 bg-blue-100 border-blue-50 transition-colors">
+                            <span class="text-2xl">🐕</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-blue-600 mb-0.5">현재 등급</p>
+                            <h3 class="text-lg font-bold text-gray-800">명예 구조견 (Lv.4)</h3>
+                            <p id="level-desc" class="text-[11px] text-gray-500">다음 레벨까지 비콘 120회 수집</p>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full bg-gray-100 rounded-full h-2 mb-1 relative z-10">
+                        <div id="exp-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-700" style="width: 70%"></div>
+                    </div>
+                    <p id="exp-text" class="text-[10px] text-right text-gray-500 relative z-10">380 / 500 Pts</p>
+                </div>
+
+                <!-- 레이더 UI -->
+                <h3 class="font-bold text-gray-800 mb-2 flex items-center gap-2 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    오늘 밝힌 우리 동네
+                </h3>
+                <div class="relative bg-[#e2e8f0] rounded-2xl h-48 mb-6 overflow-hidden flex items-center justify-center border border-gray-200">
+                    <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#94a3b8 1px, transparent 1px); background-size: 10px 10px;"></div>
+                    
+                    <!-- Radar Dot -->
+                    <div id="radar-dot" class="w-20 h-20 bg-blue-500 rounded-full blur-xl opacity-30 transition-all duration-500 flex items-center justify-center relative"></div>
+                    
+                    <div class="z-10 text-center bg-white/90 p-3 rounded-xl shadow-sm backdrop-blur-sm border border-white/50">
+                        <p id="distance-text" class="font-black text-blue-800 text-lg">2.4km 순찰 완료</p>
+                        <p id="beacon-text" class="text-xs text-gray-600 font-medium">15개의 비콘 신호 수집</p>
+                    </div>
+                </div>
+
+                <button id="btn-patrol" onclick="togglePatrol()" class="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                    <span>동네 순찰 시작하기</span>
+                </button>
+            </div>
+
+            <!-- ==========================================
+                 TAB 2: 긴급찾기 (Escrow)
+            =========================================== -->
+            <div id="tab-emergency" class="tab-content bg-gray-50 min-h-full p-4 pb-24">
+                
+                <!-- Role Toggle -->
+                <div class="flex bg-gray-200 p-1 rounded-lg mb-6 w-full max-w-[200px] mx-auto">
+                    <button id="role-guardian" onclick="setRole('guardian')" class="flex-1 text-xs py-1.5 rounded-md font-bold transition bg-white shadow text-blue-700">보호자</button>
+                    <button id="role-informer" onclick="setRole('informer')" class="flex-1 text-xs py-1.5 rounded-md font-bold transition text-gray-500">제보자</button>
+                </div>
+
+                <div class="mb-4">
+                    <span class="bg-red-100 text-red-600 text-[10px] font-black px-2 py-1 rounded mb-2 inline-block tracking-wider animate-pulse">긴급 찾기 진행중</span>
+                    <h2 class="text-lg font-bold text-gray-800">연남동 골든리트리버 '망고'</h2>
+                </div>
+
+                <!-- Step 1: PENDING (보호자 시점) -->
+                <div id="escrow-pending" class="bg-white border-2 border-red-100 rounded-2xl p-5 shadow-sm mb-4 text-center">
+                    <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-1">에스크로 보상금 예치</h3>
+                    <p class="text-xs text-gray-500 mb-4 px-2">시민 제보를 독려하기 위해 보상금을 플랫폼에 예치하세요. (미발견 시 100% 환불)</p>
+                    <button onclick="handleDeposit()" class="w-full bg-[#1e293b] text-white py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-black transition shadow-md">
+                        50,000원 결제 및 예치
+                    </button>
+                </div>
+
+                <!-- 에스크로 상태 카드 (예치 완료 후 공통 노출) -->
+                <div id="escrow-status-card" class="hidden bg-white border border-blue-200 rounded-2xl p-4 shadow-sm mb-4 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-bl-full -z-0"></div>
+                    <div class="flex justify-between items-center mb-2 relative z-10">
+                        <span class="text-xs font-bold text-gray-600 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            안전 보상금
+                        </span>
+                        <span id="escrow-badge" class="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold">예치 완료</span>
+                    </div>
+                    <div class="text-2xl font-black text-gray-800 mb-1 relative z-10">
+                        50,000 <span class="text-sm font-medium text-gray-500">원</span>
+                    </div>
+                    <p id="escrow-desc" class="text-[10px] text-gray-500 relative z-10">결제대금예치(PG) 계좌에 안전 보관중</p>
+                </div>
+
+                <!-- Step 2: REPORTING (제보자 시점) -->
+                <div id="report-input-area" class="hidden bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-4">
+                    <h3 class="font-bold text-gray-800 mb-2 text-sm">실종 동물 발견 제보하기</h3>
+                    <div class="bg-gray-50 border border-gray-200 border-dashed rounded-xl h-20 mb-3 flex flex-col items-center justify-center text-gray-400 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-1"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        <span class="text-[10px]">현장 사진 촬영/첨부</span>
+                    </div>
+                    <button onclick="handleSubmitReport()" class="w-full py-3 bg-orange-500 text-white rounded-xl text-sm font-bold shadow-md hover:bg-orange-600 transition">
+                        발견 위치 제보하기
+                    </button>
+                </div>
+
+                <!-- 접수된 제보 리스트 -->
+                <div id="report-list-area" class="hidden">
+                    <h3 class="font-bold text-gray-800 mb-2 text-sm px-1">접수된 제보</h3>
+                    <div id="report-card" class="bg-white rounded-2xl p-4 shadow-sm border border-blue-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-orange-100 rounded-full flex items-center justify-center text-[10px] font-bold text-orange-600">나</div>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">이웃시민A <span class="text-[9px] text-orange-500 font-normal ml-1 border border-orange-200 px-1 rounded">Lv.2</span></p>
+                                    <p class="text-[10px] text-gray-400">방금 전 • 연의숲 벤치 밑</p>
+                                </div>
+                            </div>
+                            <span id="report-status-badge" class="hidden text-[10px] font-bold text-green-600 flex items-center gap-1">채택됨</span>
+                        </div>
+                        
+                        <!-- 보호자 시점: 채택 버튼 -->
+                        <div id="action-guardian-confirm" class="mt-3">
+                            <button onclick="showSettlementModal()" class="w-full py-2.5 bg-blue-600 text-white rounded-lg text-xs font-bold shadow hover:bg-blue-700 transition animate-pulse">
+                                이 제보 채택 및 정산하기
+                            </button>
+                        </div>
+                        
+                        <!-- 제보자 시점: 대기 상태 -->
+                        <div id="action-informer-wait" class="mt-3 text-center p-2 bg-gray-50 rounded-lg border border-gray-100">
+                            <p class="text-[11px] text-gray-500 font-medium">보호자의 채택을 기다리고 있습니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ==========================================
+                 TAB 3: 내 지갑 (Wallet)
+            =========================================== -->
+            <div id="tab-wallet" class="tab-content p-4 pb-24">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">내 지갑</h2>
+                
+                <div class="bg-[#1e293b] rounded-2xl p-6 shadow-md text-white mb-6 border border-[#334155]">
+                    <p class="text-gray-400 text-xs mb-2">출금 가능 리워드</p>
+                    <div id="wallet-balance" class="text-4xl font-black mb-6 tracking-tight transition-transform">
+                        0 <span class="text-lg font-medium text-gray-500 ml-1">원</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="attemptWithdraw('cash')" class="flex-1 bg-[#334155] hover:bg-[#475569] active:scale-95 transition py-2.5 rounded-xl text-xs font-bold text-gray-200">계좌로 출금</button>
+                        <button onclick="attemptWithdraw('giftcard')" class="flex-1 bg-[#334155] hover:bg-[#475569] active:scale-95 transition py-2.5 rounded-xl text-xs font-bold text-gray-200">상품권 교환</button>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-gray-800 text-sm mb-3">정산 내역</h3>
+                <div id="tx-list" class="flex flex-col gap-2">
+                    <div id="tx-empty" class="flex items-center justify-center h-24 border border-dashed border-gray-300 rounded-xl">
+                        <p class="text-xs text-gray-400 font-medium">내역이 없습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ==========================================
+             Bottom Navigation
+        =========================================== -->
+        <div class="absolute bottom-0 w-full bg-white border-t border-gray-100 flex justify-around items-center pb-6 pt-3 px-2 z-20 rounded-b-[2rem]">
+            <button onclick="switchMainTab('gamification')" class="nav-btn gamification text-blue-600 flex flex-col items-center gap-1 w-20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span class="text-[10px] font-bold">동네안심</span>
+            </button>
+            
+            <button onclick="switchMainTab('emergency')" class="nav-btn emergency text-gray-400 flex flex-col items-center relative -top-5 transition-transform active:scale-95">
+                <div class="nav-icon-bg w-14 h-14 rounded-full flex items-center justify-center shadow-md bg-gray-700 text-white border-4 border-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                </div>
+                <span class="nav-text text-[10px] font-bold mt-1 text-gray-500">긴급찾기</span>
+            </button>
+            
+            <button onclick="switchMainTab('wallet')" class="nav-btn wallet text-gray-400 flex flex-col items-center gap-1 w-20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                <span class="text-[10px] font-bold">내 지갑</span>
+            </button>
+        </div>
+
+        <!-- ==========================================
+             Overlays (Toast & Modal)
+        =========================================== -->
+        <div id="toast" class="absolute bottom-28 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50 whitespace-nowrap"></div>
+
+        <div id="modal-settle" class="absolute inset-0 bg-black/60 z-40 hidden flex items-center justify-center px-4 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-slide-in">
+                <div class="bg-blue-600 p-4 text-center">
+                    <h3 class="text-white font-bold text-lg">제보 채택 및 정산승인</h3>
+                </div>
+                <div class="p-5">
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4">
+                        <div class="flex justify-between text-xs mb-2">
+                            <span class="text-gray-500">총 예치금</span>
+                            <span class="font-bold text-gray-800">50,000원</span>
+                        </div>
+                        <div class="flex justify-between text-sm mb-2 text-blue-600">
+                            <span class="font-bold">제보자 지급 (70%)</span>
+                            <span class="font-black">35,000원</span>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-gray-400 border-t border-gray-200 pt-2">
+                            <span>플랫폼 수수료 (30%)</span>
+                            <span>15,000원</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="closeModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold">취소</button>
+                        <button onclick="executeSettlement()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-blue-700">채택/송금</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 출금/교환 확인 모달 -->
+        <div id="modal-withdraw" class="absolute inset-0 bg-black/60 z-40 hidden flex items-center justify-center px-4 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-slide-in">
+                <div class="bg-[#1e293b] p-4 text-center">
+                    <h3 id="withdraw-title" class="text-white font-bold text-lg">출금/교환 확인</h3>
+                </div>
+                <div class="p-5">
+                    <div id="withdraw-msg" class="text-center text-gray-700 text-sm mb-6 leading-relaxed">...</div>
+                    <div class="flex gap-2">
+                        <button onclick="closeWithdrawModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold">취소</button>
+                        <button id="withdraw-confirm-btn" class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-blue-700">확인</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 로직 자바스크립트 -->
+    <script>
+        // --- 1. 상태 변수 ---
+        let currentTab = 'gamification';
+        let currentUserRole = 'guardian'; // guardian or informer
+        let escrowState = 'PENDING'; // PENDING -> DEPOSITED -> REPORTED -> SETTLED
+        
+        let walletBalance = 0; // 지갑 잔액 변수 추가
+        
+        let isPatrolling = false;
+        let pDist = 2.4, pBeacons = 15, pPts = 380;
+        let patrolInterval;
+
+        // --- 2. 유틸 기능 ---
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 2500);
+        }
+
+        function closeModal() { document.getElementById('modal-settle').classList.add('hidden'); }
+        function showSettlementModal() { document.getElementById('modal-settle').classList.remove('hidden'); }
+        
+        function closeWithdrawModal() { document.getElementById('modal-withdraw').classList.add('hidden'); }
+
+        // --- 3. 탭 네비게이션 제어 ---
+        function switchMainTab(tabId) {
+            // 컨텐츠 전환
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            currentTab = tabId;
+
+            // 하단 네비 스타일 변경
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600');
+                btn.classList.add('text-gray-400');
+            });
+            const activeBtn = document.querySelector(`.nav-btn.${tabId}`);
+            activeBtn.classList.remove('text-gray-400');
+            activeBtn.classList.add('text-blue-600');
+
+            // 중앙 버튼 특별 처리
+            const centerIcon = document.querySelector('.nav-icon-bg');
+            const centerText = document.querySelector('.nav-text');
+            if(tabId === 'emergency') {
+                centerIcon.classList.replace('bg-gray-700', 'bg-red-500');
+                centerText.classList.replace('text-gray-500', 'text-red-500');
+                renderEmergencyView(); // 긴급 탭 진입 시 뷰 갱신
+            } else {
+                centerIcon.classList.replace('bg-red-500', 'bg-gray-700');
+                centerText.classList.replace('text-red-500', 'text-gray-500');
+            }
+
+            // 헤더 뱃지(역할 표시)
+            const badge = document.getElementById('header-role-badge');
+            if(tabId === 'gamification') badge.classList.add('hidden');
+            else {
+                badge.classList.remove('hidden');
+                badge.innerText = currentUserRole === 'guardian' ? '보호자 모드' : '제보자 모드';
+            }
+        }
+
+        // --- 4. 탭 1: 게이미피케이션 로직 ---
+        function togglePatrol() {
+            isPatrolling = !isPatrolling;
+            const btn = document.getElementById('btn-patrol');
+            const dot = document.getElementById('radar-dot');
+            const bgEffect = document.getElementById('patrol-bg-effect');
+            const avatar = document.getElementById('avatar-bg');
+
+            if(isPatrolling) {
+                btn.innerHTML = `<span class="animate-pulse">순찰 종료하기</span>`;
+                btn.classList.replace('bg-blue-600', 'bg-red-500');
+                btn.classList.replace('hover:bg-blue-700', 'hover:bg-red-600');
+                dot.classList.add('pulse-active');
+                bgEffect.classList.remove('opacity-0');
+                avatar.classList.replace('bg-blue-100', 'bg-blue-500');
+
+                // 1.5초마다 가상 데이터 갱신 시뮬레이션
+                patrolInterval = setInterval(() => {
+                    pDist += 0.2; pBeacons += 1; pPts += 15;
+                    document.getElementById('distance-text').innerText = `${pDist.toFixed(1)}km 순찰 완료`;
+                    document.getElementById('beacon-text').innerText = `${pBeacons}개의 비콘 신호 수집`;
+                    document.getElementById('exp-text').innerText = `${pPts} / 500 Pts`;
+                    document.getElementById('exp-bar').style.width = `${Math.min((pPts/500)*100, 100)}%`;
+                    document.getElementById('level-desc').innerText = `다음 레벨까지 비콘 ${Math.max(120-pBeacons, 0)}회 수집`;
+                    showToast('비콘을 수집했습니다! (+15 Pts)');
+                }, 1500);
+            } else {
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg><span>동네 순찰 시작하기</span>`;
+                btn.classList.replace('bg-red-500', 'bg-blue-600');
+                btn.classList.replace('hover:bg-red-600', 'hover:bg-blue-700');
+                dot.classList.remove('pulse-active');
+                bgEffect.classList.add('opacity-0');
+                avatar.classList.replace('bg-blue-500', 'bg-blue-100');
+                clearInterval(patrolInterval);
+            }
+        }
+
+        // --- 5. 탭 2: 긴급찾기 (Escrow) 제어 ---
+        function setRole(role) {
+            currentUserRole = role;
+            
+            // 토글 버튼 UI
+            const gBtn = document.getElementById('role-guardian');
+            const iBtn = document.getElementById('role-informer');
+            
+            if(role === 'guardian') {
+                gBtn.className = "flex-1 text-xs py-1.5 rounded-md font-bold transition bg-white shadow text-blue-700";
+                iBtn.className = "flex-1 text-xs py-1.5 rounded-md font-bold transition text-gray-500";
+            } else {
+                iBtn.className = "flex-1 text-xs py-1.5 rounded-md font-bold transition bg-white shadow text-blue-700";
+                gBtn.className = "flex-1 text-xs py-1.5 rounded-md font-bold transition text-gray-500";
+            }
+            
+            document.getElementById('header-role-badge').innerText = role === 'guardian' ? '보호자 모드' : '제보자 모드';
+            renderEmergencyView();
+        }
+
+        function renderEmergencyView() {
+            // 요소 참조
+            const pendingUI = document.getElementById('escrow-pending');
+            const statusCard = document.getElementById('escrow-status-card');
+            const badge = document.getElementById('escrow-badge');
+            const desc = document.getElementById('escrow-desc');
+            const reportInput = document.getElementById('report-input-area');
+            const reportList = document.getElementById('report-list-area');
+            
+            const actionGConfirm = document.getElementById('action-guardian-confirm');
+            const actionIWait = document.getElementById('action-informer-wait');
+            const reportBadge = document.getElementById('report-status-badge');
+
+            // 기본 숨김 처리
+            pendingUI.classList.add('hidden');
+            statusCard.classList.add('hidden');
+            reportInput.classList.add('hidden');
+            reportList.classList.add('hidden');
+            actionGConfirm.classList.add('hidden');
+            actionIWait.classList.add('hidden');
+            reportBadge.classList.add('hidden');
+
+            // 상태 및 권한에 따른 렌더링
+            if(escrowState === 'PENDING') {
+                if(currentUserRole === 'guardian') pendingUI.classList.remove('hidden');
+                if(currentUserRole === 'informer') {
+                    // 제보자는 예치 전에도 폼은 보이지만 비활성 느낌
+                    reportInput.classList.remove('hidden');
+                    reportInput.style.opacity = '0.5';
+                }
+            } 
+            else {
+                // DEPOSITED 이상이면 상태 카드 표시
+                statusCard.classList.remove('hidden');
+                
+                if(escrowState === 'SETTLED') {
+                    badge.innerText = "정산 완료";
+                    badge.className = "bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full font-bold";
+                    desc.innerText = "제보자에게 보상금이 지급되었습니다.";
+                    statusCard.className = "bg-gray-50 border border-gray-200 rounded-2xl p-4 shadow-sm mb-4 relative overflow-hidden";
+                } else {
+                    badge.innerText = "예치 완료";
+                    badge.className = "bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold";
+                    desc.innerText = "결제대금예치(PG) 계좌에 안전 보관중";
+                    statusCard.className = "bg-white border border-blue-200 rounded-2xl p-4 shadow-sm mb-4 relative overflow-hidden";
+                }
+
+                if(escrowState === 'DEPOSITED') {
+                    if(currentUserRole === 'informer') {
+                        reportInput.classList.remove('hidden');
+                        reportInput.style.opacity = '1';
+                    }
+                }
+                
+                if(escrowState === 'REPORTED' || escrowState === 'SETTLED') {
+                    reportList.classList.remove('hidden');
+                    reportList.classList.add('animate-slide-in');
+                    
+                    if(escrowState === 'REPORTED') {
+                        if(currentUserRole === 'guardian') actionGConfirm.classList.remove('hidden');
+                        if(currentUserRole === 'informer') actionIWait.classList.remove('hidden');
+                    } else if (escrowState === 'SETTLED') {
+                        reportBadge.classList.remove('hidden');
+                    }
+                }
+            }
+        }
+
+        // STEP 1: 예치 (보호자)
+        function handleDeposit() {
+            escrowState = 'DEPOSITED';
+            showToast('PG사 결제가 완료되어 에스크로에 예치되었습니다.');
+            renderEmergencyView();
+            
+            // 테스트 편의: 제보자 화면으로 자동 전환하여 다음 행동 유도
+            setTimeout(() => {
+                showToast('[테스트 가이드] 제보자 화면으로 자동 전환합니다.');
+                setRole('informer');
+            }, 2000);
+        }
+
+        // STEP 2: 제보 (제보자)
+        function handleSubmitReport() {
+            if(escrowState === 'PENDING') {
+                showToast('보호자의 보상금 예치 후 제보할 수 있습니다.');
+                return;
+            }
+            escrowState = 'REPORTED';
+            showToast('발견 제보가 성공적으로 접수되었습니다.');
+            renderEmergencyView();
+
+            // 테스트 편의: 보호자 화면으로 자동 전환
+            setTimeout(() => {
+                showToast('[테스트 가이드] 보호자 화면으로 자동 전환합니다.');
+                setRole('guardian');
+            }, 2000);
+        }
+
+        // STEP 3~4: 채택 및 정산 (보호자)
+        function executeSettlement() {
+            escrowState = 'SETTLED';
+            closeModal();
+            showToast('제보가 채택되었으며, 보상금 정산이 실행됩니다.');
+            
+            // 지갑 데이터 갱신
+            walletBalance += 35000;
+            document.getElementById('wallet-balance').innerHTML = `${walletBalance.toLocaleString()} <span class="text-lg font-medium text-gray-500 ml-1">원</span>`;
+            document.getElementById('tx-empty').style.display = 'none';
+            
+            const txDiv = document.createElement('div');
+            txDiv.className = 'flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100 animate-slide-in mb-2';
+            txDiv.innerHTML = `
+                <div>
+                    <p class="font-bold text-gray-800 text-xs mb-0.5">망고 구조 보상금</p>
+                    <p class="text-[10px] text-gray-500">에스크로 자동 정산</p>
+                </div>
+                <p class="font-black text-blue-600 text-sm">+35,000원</p>
+            `;
+            const txList = document.getElementById('tx-list');
+            txList.insertBefore(txDiv, txList.firstChild);
+
+            renderEmergencyView();
+
+            // 테스트 편의: 제보자 지갑 탭으로 이동
+            setTimeout(() => {
+                setRole('informer');
+                switchMainTab('wallet');
+                showToast('제보자 지갑에 보상금이 입금되었습니다.');
+            }, 1500);
+        }
+        
+        // --- 6. 지갑 출금 및 교환 로직 ---
+        let withdrawTypeTarget = '';
+
+        function attemptWithdraw(type) {
+            // 잔액 부족 시 에러 처리
+            if (walletBalance <= 0) {
+                showToast('출금 가능한 잔액이 부족합니다.');
+                const balanceEl = document.getElementById('wallet-balance');
+                balanceEl.classList.add('animate-shake'); // 떨림 애니메이션
+                setTimeout(() => balanceEl.classList.remove('animate-shake'), 400);
+                return;
+            }
+
+            // 모달창 오픈 및 메시지 셋팅
+            withdrawTypeTarget = type;
+            const title = type === 'cash' ? '계좌 출금 확인' : '상품권 교환 확인';
+            
+            let msg = '';
+            if (type === 'cash') {
+                msg = `<p>현재 잔액 <b>${walletBalance.toLocaleString()}원</b>을<br>등록된 계좌로 출금하시겠습니까?</p>`;
+            } else {
+                msg = `
+                <p class="mb-4 text-sm text-gray-700">현재 잔액 <b>${walletBalance.toLocaleString()}원</b>을<br>아래 상품권으로 교환합니다. 선택해 주세요.</p>
+                <div class="flex flex-col gap-2 text-left">
+                    <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition">
+                        <input type="radio" name="giftcard-type" value="스타벅스 커피 쿠폰" checked class="w-4 h-4 text-blue-600 accent-blue-600">
+                        <span class="text-sm font-bold text-gray-700">☕ 스타벅스 커피 쿠폰</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition">
+                        <input type="radio" name="giftcard-type" value="신세계 상품권" class="w-4 h-4 text-blue-600 accent-blue-600">
+                        <span class="text-sm font-bold text-gray-700">🛍️ 신세계 상품권</span>
+                    </label>
+                </div>`;
+            }
+            
+            document.getElementById('withdraw-title').innerText = title;
+            document.getElementById('withdraw-msg').innerHTML = msg;
+            document.getElementById('withdraw-confirm-btn').onclick = executeWithdraw;
+            
+            document.getElementById('modal-withdraw').classList.remove('hidden');
+        }
+
+        function executeWithdraw() {
+            // 실제 출금 처리
+            let typeStr = '';
+            let subtitleStr = '';
+            
+            if (withdrawTypeTarget === 'cash') {
+                typeStr = '계좌 출금 완료';
+                subtitleStr = '수수료 면제';
+            } else {
+                const checkedRadio = document.querySelector('input[name="giftcard-type"]:checked');
+                const cardName = checkedRadio ? checkedRadio.value : '상품권';
+                typeStr = `${cardName} 교환 완료`;
+                subtitleStr = '핀번호 문자 발송됨';
+            }
+            
+            const amountStr = walletBalance.toLocaleString();
+            
+            walletBalance = 0; // 잔액 차감
+            document.getElementById('wallet-balance').innerHTML = `0 <span class="text-lg font-medium text-gray-500 ml-1">원</span>`;
+            
+            const txDiv = document.createElement('div');
+            txDiv.className = 'flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100 animate-slide-in mb-2';
+            txDiv.innerHTML = `
+                <div>
+                    <p class="font-bold text-gray-800 text-xs mb-0.5">${typeStr}</p>
+                    <p class="text-[10px] text-gray-500">${subtitleStr}</p>
+                </div>
+                <p class="font-black text-red-500 text-sm">-${amountStr}원</p>
+            `;
+            
+            const txList = document.getElementById('tx-list');
+            txList.insertBefore(txDiv, txList.firstChild); // 리스트 최상단에 마이너스 내역 추가
+
+            closeWithdrawModal();
+            showToast(`${withdrawTypeTarget === 'cash' ? '계좌 출금이' : '상품권 교환이'} 완료되었습니다.`);
+        }
+
+        // 초기 렌더링
+        switchMainTab('gamification');
+    </script>
+</body>
+</html>

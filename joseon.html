@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>조선 왕조 계보도</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      .king-item.active {
+        border-color: #f59e0b;
+        background-color: rgba(254, 243, 199, 0.3);
+        box-shadow: 0 0 0 1px #f59e0b;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900 p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+      <!-- Header -->
+      <header class="mb-8 text-center">
+        <div
+          class="inline-flex items-center justify-center p-3 bg-amber-600 text-white rounded-full mb-4 shadow-lg"
+        >
+          <i data-lucide="crown" class="w-8 h-8"></i>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
+          조선 왕조 계보도
+        </h1>
+        <p class="text-slate-600">
+          1392년부터 1910년까지 519년간 이어진 27대 국왕의 역사
+        </p>
+      </header>
+
+      <!-- Mnemonic Banner -->
+      <div
+        class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 shadow-sm"
+      >
+        <div class="flex items-center gap-2 text-amber-800 font-semibold mb-2">
+          <i data-lucide="history" class="w-[18px] h-[18px]"></i>
+          <span>암기 도우미 (태정태세문단세...)</span>
+        </div>
+        <div id="mnemonic-container" class="flex flex-wrap gap-2">
+          <!-- Mnemonic characters will be injected here -->
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="mb-8 relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"
+        >
+          <i data-lucide="search" class="w-5 h-5"></i>
+        </div>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="왕의 이름(묘호), 본명, 또는 주요 사건을 검색하세요..."
+          class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+        />
+      </div>
+
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- List View -->
+        <div
+          id="king-list"
+          class="lg:col-span-2 space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar"
+        >
+          <!-- King list items will be injected here -->
+        </div>
+
+        <!-- Detail Panel -->
+        <div id="detail-panel" class="lg:col-span-1">
+          <div
+            class="bg-slate-100 border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center text-slate-400 sticky top-8 h-64 flex flex-col justify-center items-center"
+          >
+            <i data-lucide="info" class="w-12 h-12 mb-4 opacity-30"></i>
+            <p>왕을 선택하여 상세 정보를 확인하세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const kingsData = [
+        {
+          id: 1,
+          name: '태조',
+          fullName: '이성계',
+          period: '1392-1398',
+          notes: '조선 건국(1392), 한양 천도(1394), 제1차 왕자의 난 발생',
+          lineage: '개국시조'
+        },
+        {
+          id: 2,
+          name: '정종',
+          fullName: '이방과',
+          period: '1398-1400',
+          notes: '제2차 왕자의 난 발생, 개경으로 일시 환도',
+          lineage: '태조의 차남'
+        },
+        {
+          id: 3,
+          name: '태종',
+          fullName: '이방원',
+          period: '1400-1418',
+          notes: '왕권 강화, 6조 직계제 실시, 사병 혁파, 호패법 실시',
+          lineage: '태조의 오남'
+        },
+        {
+          id: 4,
+          name: '세종',
+          fullName: '이도',
+          period: '1418-1450',
+          notes:
+            '훈민정음 창제(1443), 집현전 확장, 4군 6진 개척, 장영실 등 과학기술 진흥',
+          lineage: '태종의 삼남'
+        },
+        {
+          id: 5,
+          name: '문종',
+          fullName: '이향',
+          period: '1450-1452',
+          notes: '측우기 제작 참여, 유교적 이상 정치 추구 중 병사',
+          lineage: '세종의 장남'
+        },
+        {
+          id: 6,
+          name: '단종',
+          fullName: '이홍위',
+          period: '1452-1455',
+          notes: '계유정난(1453)으로 권력 상실, 수양대군에게 왕위 찬탈당함',
+          lineage: '문종의 외아들'
+        },
+        {
+          id: 7,
+          name: '세조',
+          fullName: '이유',
+          period: '1455-1468',
+          notes: '계유정난으로 즉위, 경국대전 편찬 시작, 이시애의 난 진압',
+          lineage: '세종의 차남'
+        },
+        {
+          id: 8,
+          name: '예종',
+          fullName: '이황',
+          period: '1468-1469',
+          notes: '남이의 옥 발생, 재위 14개월 만에 단명',
+          lineage: '세조의 차남'
+        },
+        {
+          id: 9,
+          name: '성종',
+          fullName: '이혈',
+          period: '1469-1494',
+          notes: '경국대전 완성(1485), 조선 국정 체제 완비, 사림파 등용 시작',
+          lineage: '세조의 손자'
+        },
+        {
+          id: 10,
+          name: '연산군',
+          fullName: '이융',
+          period: '1494-1506',
+          notes:
+            '무오사화(1498: 김종직의 조의제문), 갑자사화(1504: 폐비 윤리 사건), 중종반정으로 폐위',
+          lineage: '성종의 장남'
+        },
+        {
+          id: 11,
+          name: '중종',
+          fullName: '이역',
+          period: '1506-1544',
+          notes:
+            '중종반정으로 즉위, 기묘사화(1519: 조광조 등 신진 사림 숙청), 삼포왜란',
+          lineage: '성종의 차남'
+        },
+        {
+          id: 12,
+          name: '인종',
+          fullName: '이호',
+          period: '1544-1545',
+          notes: '어린 나이에 즉위하여 9개월 만에 승하, 조광조 복권 시도',
+          lineage: '중종의 장남'
+        },
+        {
+          id: 13,
+          name: '명종',
+          fullName: '이환',
+          period: '1545-1567',
+          notes:
+            '을사사화(1545: 윤임 vs 윤원형 외척 간 다툼), 문정왕후 수렴청정, 임꺽정의 난',
+          lineage: '중종의 차남'
+        },
+        {
+          id: 14,
+          name: '선조',
+          fullName: '이연',
+          period: '1567-1608',
+          notes:
+            '임진왜란(1592) 발생, 붕당정치 본격화(동인·서인 분열), 정여립 모반 사건(기축옥사)',
+          lineage: '중종의 손자 (덕흥대원군의 삼남)'
+        },
+        {
+          id: 15,
+          name: '광해군',
+          fullName: '이혼',
+          period: '1608-1623',
+          notes: '실리적 중립외교 추진, 대동법 실시(경기도), 인조반정으로 폐위',
+          lineage: '선조의 차남'
+        },
+        {
+          id: 16,
+          name: '인조',
+          fullName: '이종',
+          period: '1623-1649',
+          notes:
+            '인조반정 즉위, 이괄의 난, 정묘호란(1627), 병자호란(1636: 삼전도의 굴욕)',
+          lineage: '선조의 손자 (정원군의 장남)'
+        },
+        {
+          id: 17,
+          name: '효종',
+          fullName: '이호',
+          period: '1649-1659',
+          notes: '북벌론 추진, 나선정벌(러시아 정벌 지원), 상평통보 시범 유통',
+          lineage: '인조의 차남'
+        },
+        {
+          id: 18,
+          name: '현종',
+          fullName: '이연',
+          period: '1659-1674',
+          notes:
+            '기해예송(1659), 갑인예송(1674) 등 예송 논쟁으로 서인·남인 대립',
+          lineage: '효종의 장남'
+        },
+        {
+          id: 19,
+          name: '숙종',
+          fullName: '이순',
+          period: '1674-1720',
+          notes:
+            '경신·기사·갑술환국(환국정치), 안용복 독도 수호 활동, 백두산정계비 건립',
+          lineage: '현종의 장남'
+        },
+        {
+          id: 20,
+          name: '경종',
+          fullName: '이윤',
+          period: '1720-1724',
+          notes:
+            '신임사화(노론·소론 대립), 장희빈의 아들, 건강 악화로 짧은 재위',
+          lineage: '숙종의 장남'
+        },
+        {
+          id: 21,
+          name: '영조',
+          fullName: '이금',
+          period: '1724-1776',
+          notes:
+            '탕평책 실시, 균역법 제정, 임오화변(1762: 사도세자 사건), 서원 정리',
+          lineage: '숙종의 차남'
+        },
+        {
+          id: 22,
+          name: '정조',
+          fullName: '이산',
+          period: '1776-1800',
+          notes:
+            '규장각 설치, 수원 화성 축조, 장용영 창설, 신해통공(금난전권 폐지)',
+          lineage: '영조의 손자 (사도세자의 차남)'
+        },
+        {
+          id: 23,
+          name: '순조',
+          fullName: '이공',
+          period: '1800-1834',
+          notes:
+            '세도 정치 시작(안동 김씨), 홍경래의 난(1811), 천주교 박해(신유박해)',
+          lineage: '정조의 차남'
+        },
+        {
+          id: 24,
+          name: '헌종',
+          fullName: '이환',
+          period: '1834-1849',
+          notes: '기해박해(1839), 병오박해(1846), 이양선 출몰 증가',
+          lineage: '순조의 손자 (익종의 아들)'
+        },
+        {
+          id: 25,
+          name: '철종',
+          fullName: '이원범',
+          period: '1849-1863',
+          notes: '삼정의 문란 심화, 임술 농민 봉기(1862), 안동 김씨 세도 극치',
+          lineage: '영조의 현손 (전계대원군의 아들)'
+        },
+        {
+          id: 26,
+          name: '고종',
+          fullName: '이희',
+          period: '1863-1907',
+          notes:
+            '병인양요(1866), 신미양요(1871), 갑신정변(1884), 대한제국 선포(1897), 을사늑약(1905)',
+          lineage: '인조의 후손 (흥선대원군의 차남)'
+        },
+        {
+          id: 27,
+          name: '순종',
+          fullName: '이척',
+          period: '1907-1910',
+          notes:
+            '한일신협약(정미7조약), 군대 해산, 경술국치(1910)로 조선 왕조 종언',
+          lineage: '고종의 차남'
+        }
+      ]
+
+      let selectedId = null
+      let searchTerm = ''
+
+      const mnemonicContainer = document.getElementById('mnemonic-container')
+      const searchInput = document.getElementById('search-input')
+      const kingList = document.getElementById('king-list')
+      const detailPanel = document.getElementById('detail-panel')
+
+      function initMnemonic() {
+        const mnemonic =
+          '태 정 태 세 문 단 세 예 성 연 중 인 명 선 광 인 효 현 숙 경 영 정 순 헌 철 고 순'
+        mnemonicContainer.innerHTML = mnemonic
+          .split(' ')
+          .map(
+            char => `
+                <span class="bg-white border border-amber-200 w-8 h-8 flex items-center justify-center rounded shadow-sm text-sm font-bold text-amber-900">
+                    ${char}
+                </span>
+            `
+          )
+          .join('')
+      }
+
+      function renderList() {
+        const filtered = kingsData.filter(
+          king =>
+            king.name.includes(searchTerm) ||
+            king.fullName.includes(searchTerm) ||
+            king.notes.includes(searchTerm)
+        )
+
+        if (filtered.length === 0) {
+          kingList.innerHTML = `<div class="text-center py-12 text-slate-500">검색 결과가 없습니다.</div>`
+          return
+        }
+
+        kingList.innerHTML = filtered
+          .map(
+            king => `
+                <div
+                    onclick="selectKing(${king.id})"
+                    class="king-item flex items-center p-4 bg-white border rounded-xl cursor-pointer transition-all hover:shadow-md hover:border-amber-300 ${
+                      selectedId === king.id ? 'active' : 'border-slate-200'
+                    }"
+                    data-id="${king.id}"
+                >
+                    <div class="flex-shrink-0 w-10 h-10 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center font-bold mr-4">
+                        ${king.id}
+                    </div>
+                    <div class="flex-grow">
+                        <div class="flex items-baseline gap-2">
+                            <h3 class="text-xl font-bold text-slate-800">${
+                              king.name
+                            }</h3>
+                            <span class="text-xs text-slate-500">(${
+                              king.fullName
+                            })</span>
+                        </div>
+                        <p class="text-sm text-amber-700 font-medium">${
+                          king.period
+                        }</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="text-slate-300 transition-transform ${
+                      selectedId === king.id ? 'rotate-90 text-amber-500' : ''
+                    }"></i>
+                </div>
+            `
+          )
+          .join('')
+
+        lucide.createIcons()
+      }
+
+      function renderDetail() {
+        if (!selectedId) {
+          detailPanel.innerHTML = `
+                    <div class="bg-slate-100 border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center text-slate-400 sticky top-8 h-64 flex flex-col justify-center items-center">
+                        <i data-lucide="info" class="w-12 h-12 mb-4 opacity-30"></i>
+                        <p>왕을 선택하여 상세 정보를 확인하세요.</p>
+                    </div>
+                `
+        } else {
+          const king = kingsData.find(k => k.id === selectedId)
+          detailPanel.innerHTML = `
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden sticky top-8">
+                        <div class="bg-amber-600 p-6 text-white text-center">
+                            <div class="text-sm uppercase tracking-wider opacity-80 mb-1">제 ${
+                              king.id
+                            }대 국왕</div>
+                            <h2 class="text-4xl font-black mb-2">${
+                              king.name
+                            }</h2>
+                            <div class="flex justify-center items-center gap-2 text-amber-100">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                <span>${king.fullName}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6 space-y-6">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+                                    <i data-lucide="history" class="w-3.5 h-3.5"></i> 재위 기간
+                                </h4>
+                                <p class="text-lg text-slate-800 font-semibold">${
+                                  king.period
+                                }</p>
+                            </div>
+
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+                                    <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i> 가계 계보
+                                </h4>
+                                <p class="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    ${king.lineage}
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+                                    <i data-lucide="info" class="w-3.5 h-3.5"></i> 주요 역사적 사건 및 업적
+                                </h4>
+                                <div class="text-slate-700 leading-relaxed space-y-2">
+                                    ${king.notes
+                                      .split(', ')
+                                      .map(
+                                        note =>
+                                          `<div class="flex gap-2"><span class="text-amber-500">•</span><span>${note}</span></div>`
+                                      )
+                                      .join('')}
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-100">
+                                <button 
+                                    onclick="deselectKing()"
+                                    class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    닫기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `
+        }
+        lucide.createIcons()
+      }
+
+      window.selectKing = function (id) {
+        selectedId = id
+        renderList()
+        renderDetail()
+      }
+
+      window.deselectKing = function () {
+        selectedId = null
+        renderList()
+        renderDetail()
+      }
+
+      searchInput.addEventListener('input', e => {
+        searchTerm = e.target.value
+        renderList()
+      })
+
+      window.onload = () => {
+        initMnemonic()
+        renderList()
+        renderDetail()
+        lucide.createIcons()
+      }
+    </script>
+  </body>
+</html>

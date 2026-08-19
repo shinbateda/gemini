@@ -1,0 +1,1042 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>차량 스피드 모니터링 & 셔터 카메라 관제</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Noto+Sans+KR:wght@400;500;700&display=swap');
+    
+    .font-digital {
+      font-family: 'Orbitron', monospace;
+    }
+    
+    .dfs-panel {
+      background: #111827;
+      border: 4px solid #f59e0b;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    }
+
+    .shutter-flash {
+      animation: flashAnim 0.3s ease-out;
+    }
+
+    @keyframes flashAnim {
+      0% { opacity: 0.9; background-color: #ffffff; }
+      100% { opacity: 0; background-color: transparent; }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1f2937;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #4b5563;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans antialiased min-h-screen pb-20 md:pb-6 select-none">
+
+  <!-- Flash Overlay Effect -->
+  <div id="flashOverlay" class="fixed inset-0 pointer-events-none z-50 opacity-0"></div>
+
+  <!-- Top App Header -->
+  <header class="sticky top-0 z-40 bg-gray-900/95 backdrop-blur border-b border-gray-800 px-4 py-3 flex items-center justify-between shadow-lg">
+    <div class="flex items-center space-x-2.5">
+      <div class="p-2 bg-amber-500/20 text-amber-400 rounded-lg border border-amber-500/30">
+        <i data-lucide="gauge" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-white leading-tight">스피드 모니터링 <span class="text-xs font-normal text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800">DFS & Camera</span></h1>
+        <p class="text-xs text-gray-400">차량별 속도 검출 및 셔터 연동 관제 시스템</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-2">
+      <button id="soundToggleBtn" onclick="toggleSound()" class="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs flex items-center space-x-1 border border-gray-700 transition">
+        <i id="soundIcon" data-lucide="volume-2" class="w-4 h-4 text-green-400"></i>
+        <span id="soundLabel" class="hidden sm:inline">음향 ON</span>
+      </button>
+      <div class="flex items-center space-x-1 bg-green-950 text-green-400 text-xs px-2.5 py-1 rounded-full border border-green-800">
+        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+        <span class="font-medium">연동 정상</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-5xl mx-auto px-3 py-4 space-y-4">
+
+    <!-- TAB 1: 실시간 모니터링 및 속도전시기 시뮬레이션 -->
+    <section id="tab-monitor" class="tab-content space-y-4">
+      
+      <!-- Top Status Dashboard -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-400">총 감지 차량</p>
+            <p id="stat-total" class="text-xl font-bold font-digital text-white mt-0.5">0 대</p>
+          </div>
+          <i data-lucide="car" class="w-8 h-8 text-blue-400/50"></i>
+        </div>
+        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-400">과속 단속건수</p>
+            <p id="stat-overspeed" class="text-xl font-bold font-digital text-red-400 mt-0.5">0 건</p>
+          </div>
+          <i data-lucide="alert-triangle" class="w-8 h-8 text-red-400/50"></i>
+        </div>
+        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-400">도로 제한속도</p>
+            <p id="stat-limit" class="text-xl font-bold font-digital text-amber-400 mt-0.5">30 km/h</p>
+          </div>
+          <i data-lucide="shield-alert" class="w-8 h-8 text-amber-400/50"></i>
+        </div>
+        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-400">선택 셔터 카메라</p>
+            <p id="stat-camera" class="text-sm font-bold text-gray-200 mt-1 truncate">TNO-7180RLP</p>
+          </div>
+          <i data-lucide="camera" class="w-8 h-8 text-emerald-400/50"></i>
+        </div>
+      </div>
+
+      <!-- DFS Display & Live Road Canvas Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        <!-- DFS Sign Board Simulation View -->
+        <div class="dfs-panel rounded-2xl p-4 flex flex-col items-center justify-between relative overflow-hidden min-h-[300px]">
+          <!-- Top Sign Title -->
+          <div class="w-full bg-amber-500 text-gray-950 font-extrabold text-center py-2 rounded-lg text-lg tracking-wider shadow">
+            <span id="dfsZoneLabel">어린이 보호구역</span>
+          </div>
+
+          <!-- Speed Limit Circle Graphic -->
+          <div class="my-3 relative flex items-center justify-center">
+            <div class="w-24 h-24 rounded-full border-8 border-red-600 bg-white flex items-center justify-center shadow-lg">
+              <span id="dfsLimitCircle" class="text-2xl font-black text-gray-900">30</span>
+            </div>
+          </div>
+
+          <!-- DFS Digital Speed Panel -->
+          <div class="w-full bg-black/90 border-2 border-gray-800 rounded-xl p-3 text-center shadow-inner">
+            <p class="text-xs text-amber-400/80 tracking-widest font-bold mb-1">당신의 현재 속도</p>
+            <div id="dfsSpeedDisplay" class="font-digital text-5xl font-black text-emerald-400 tracking-wider transition-all duration-150 py-1">
+              00
+            </div>
+            <p id="dfsStatusMsg" class="text-xs font-bold text-emerald-400 mt-1">안전 운행 중</p>
+          </div>
+
+          <!-- Alarm Signal Pulse Indicator -->
+          <div class="w-full mt-3 flex items-center justify-between text-xs text-gray-400 bg-gray-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+            <span class="flex items-center space-x-1.5">
+              <span id="pulseDot" class="w-2.5 h-2.5 rounded-full bg-gray-600"></span>
+              <span>Alarm IN 펄스:</span>
+            </span>
+            <span id="pulseText" class="font-mono text-gray-400">대기중 (OFF)</span>
+          </div>
+        </div>
+
+        <!-- Live Road Track Canvas -->
+        <div class="lg:col-span-2 bg-gray-900 rounded-2xl border border-gray-800 p-3 flex flex-col justify-between relative">
+          <div class="flex items-center justify-between mb-2 px-1">
+            <span class="text-xs font-bold text-gray-300 flex items-center space-x-1">
+              <i data-lucide="video" class="w-4 h-4 text-emerald-400"></i>
+              <span>실시간 도로 감지 시뮬레이터</span>
+            </span>
+            <span class="text-[11px] text-gray-500">레이더 주사각: 15° / 감지거리: 50m</span>
+          </div>
+
+          <!-- Canvas Element -->
+          <div class="relative w-full h-56 bg-gray-950 rounded-xl overflow-hidden border border-gray-800">
+            <canvas id="roadCanvas" class="w-full h-full block"></canvas>
+            
+            <!-- Radar Trigger Zone Indicator Overlay -->
+            <div class="absolute left-1/3 top-0 bottom-0 border-l-2 border-dashed border-amber-500/60 pointer-events-none flex items-center">
+              <span class="text-[10px] bg-amber-950/90 text-amber-300 px-1 py-0.5 rounded rotate-90 ml-[-14px]">레이더 감지</span>
+            </div>
+            <div class="absolute left-2/3 top-0 bottom-0 border-l-2 border-solid border-red-500/80 pointer-events-none flex items-center">
+              <span class="text-[10px] bg-red-950/90 text-red-300 px-1 py-0.5 rounded rotate-90 ml-[-14px]">카메라 셔터 Trap</span>
+            </div>
+          </div>
+
+          <!-- Simulation Controls -->
+          <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button onclick="spawnVehicle('normal')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs py-2.5 px-3 rounded-lg flex items-center justify-center space-x-1 shadow transition">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              <span>정상 차량 통과</span>
+            </button>
+            <button onclick="spawnVehicle('overspeed')" class="bg-red-600 hover:bg-red-500 text-white font-medium text-xs py-2.5 px-3 rounded-lg flex items-center justify-center space-x-1 shadow transition">
+              <i data-lucide="zap" class="w-4 h-4"></i>
+              <span>과속 차량 발생</span>
+            </button>
+            <button onclick="toggleAutoLoop()" id="autoLoopBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-2.5 px-3 rounded-lg flex items-center justify-center space-x-1 shadow transition">
+              <i data-lucide="play" class="w-4 h-4"></i>
+              <span id="autoLoopLabel">자동 트래픽 시작</span>
+            </button>
+            <button onclick="manualTriggerShutter()" class="bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs py-2.5 px-3 rounded-lg flex items-center justify-center space-x-1 shadow transition">
+              <i data-lucide="aperture" class="w-4 h-4"></i>
+              <span>강제 셔터링</span>
+            </button>
+          </div>
+
+          <!-- Road Limit & Camera Model Switcher -->
+          <div class="mt-2.5 pt-2.5 border-t border-gray-800 flex flex-wrap items-center justify-between text-xs gap-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-gray-400 font-medium">제한속도 설정:</span>
+              <button onclick="setRoadLimit(30)" id="limit-30-btn" class="px-2.5 py-1 rounded bg-amber-500 text-gray-950 font-bold border border-amber-400">30 km/h</button>
+              <button onclick="setRoadLimit(50)" id="limit-50-btn" class="px-2.5 py-1 rounded bg-gray-800 text-gray-300 font-medium border border-gray-700">50 km/h</button>
+              <button onclick="setRoadLimit(80)" id="limit-80-btn" class="px-2.5 py-1 rounded bg-gray-800 text-gray-300 font-medium border border-gray-700">80 km/h</button>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-gray-400 font-medium">연동 카메라:</span>
+              <select id="cameraSelect" onchange="changeCameraModel(this.value)" class="bg-gray-800 text-gray-200 border border-gray-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500">
+                <option value="TNO-7180RLP">한화비전 TNO-7180RLP (Global Shutter)</option>
+                <option value="XNB-6002">한화비전 XNB-6002 (Rolling / 헤드분리)</option>
+                <option value="MV-CS020-10GM">Hikrobot MV-CS020-10GM (머신비전 1ms)</option>
+                <option value="AR0234">AR0234 USB 3.0 모듈 (임베디드 1ms)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Captured Snapshots Quick Bar -->
+      <div class="bg-gray-900 rounded-xl border border-gray-800 p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-gray-300 flex items-center space-x-1">
+            <i data-lucide="image" class="w-4 h-4 text-amber-400"></i>
+            <span>최근 캡처 스냅샷 (실시간 OCR 렌더링)</span>
+          </span>
+          <span class="text-xs text-gray-400">클릭 시 상세 모달</span>
+        </div>
+        <div id="recentSnapshotsList" class="flex space-x-3 overflow-x-auto pb-1 min-h-[90px] items-center text-xs text-gray-500">
+          <p class="w-full text-center py-4">아직 촬영된 단속 데이터가 없습니다. 과속 차량을 발생시켜 보세요.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: 차량별 스피드 모니터링 로그 -->
+    <section id="tab-logs" class="tab-content hidden space-y-3">
+      <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+          <div class="relative w-full sm:w-64">
+            <input type="text" id="searchInput" oninput="filterLogs()" placeholder="차량번호 / 속도 검색..." class="w-full bg-gray-950 text-gray-200 border border-gray-800 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+            <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-2.5 top-2"></i>
+          </div>
+          <select id="filterStatus" onchange="filterLogs()" class="bg-gray-950 text-gray-200 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none">
+            <option value="ALL">전체 보기</option>
+            <option value="OVER">과속 위반만</option>
+            <option value="SAFE">안전 운행만</option>
+          </select>
+        </div>
+        <button onclick="clearAllLogs()" class="text-xs text-red-400 hover:text-red-300 border border-red-900/60 bg-red-950/40 px-3 py-1.5 rounded-lg flex items-center space-x-1">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>로그 전체 삭제</span>
+        </button>
+      </div>
+
+      <!-- Log Table Card View -->
+      <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-gray-950 text-gray-400 border-b border-gray-800">
+                <th class="p-3">촬영시각</th>
+                <th class="p-3">차량 번호</th>
+                <th class="p-3">측정 속도</th>
+                <th class="p-3">상태</th>
+                <th class="p-3">적용 카메라</th>
+                <th class="p-3 text-center">스냅샷</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody" class="divide-y divide-gray-800/60">
+              <tr>
+                <td colspan="6" class="p-8 text-center text-gray-500">감지된 차량 기록이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 셔터링 카메라 비교 검토표 -->
+    <section id="tab-specs" class="tab-content hidden space-y-4">
+      <div class="bg-gray-900 p-4 rounded-xl border border-gray-800">
+        <h2 class="text-sm font-bold text-amber-400 flex items-center space-x-2 mb-2">
+          <i data-lucide="sliders" class="w-4 h-4"></i>
+          <span>셔터링 가능 카메라 종합 비교 검토서</span>
+        </h2>
+        <p class="text-xs text-gray-300 leading-relaxed">
+          외부 속도 센서(레이더, 루프 센서)의 유선 트리거 신호 인입 시 실시간 셔터링(스냅샷/영상 기록)이 가능한 모델별 반응 속도, 센서 구조 및 가격 비교입니다.
+        </p>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-gray-950 text-gray-300 border-b border-gray-800">
+                <th class="p-3 font-bold min-w-[130px]">카메라 모델</th>
+                <th class="p-3 font-bold">타입/센서</th>
+                <th class="p-3 font-bold">트리거 지연시간</th>
+                <th class="p-3 font-bold">저장 메커니즘</th>
+                <th class="p-3 font-bold">추정 단가</th>
+                <th class="p-3 font-bold min-w-[180px]">핵심 특징 및 평가</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800 text-gray-300">
+              <!-- Row 1 -->
+              <tr class="hover:bg-gray-800/40">
+                <td class="p-3 font-bold text-amber-400">
+                  한화비전 TNO-7180RLP
+                </td>
+                <td class="p-3">고속 LPR / 3MP<br><span class="text-green-400">Global Shutter</span></td>
+                <td class="p-3 font-mono text-amber-300">30 ~ 100ms</td>
+                <td class="p-3">스냅샷 OSD +<br>Pre/Post 영상클립</td>
+                <td class="p-3 font-semibold text-gray-200">약 400만~550만원<br><span class="text-[10px] text-gray-500">(B2B가)</span></td>
+                <td class="p-3">
+                  <ul class="list-disc list-inside text-[11px] space-y-0.5 text-gray-300">
+                    <li>최대 200km/h 주행 차번 인식</li>
+                    <li>Road AI 내장 (차종/색상)</li>
+                    <li>단독 무인 단속 플랫폼</li>
+                  </ul>
+                </td>
+              </tr>
+              <!-- Row 2 -->
+              <tr class="hover:bg-gray-800/40">
+                <td class="p-3 font-bold text-amber-400">
+                  한화비전 XNB-6002
+                </td>
+                <td class="p-3">분리형 박스 / 2MP<br><span class="text-amber-400">Rolling Shutter</span></td>
+                <td class="p-3 font-mono text-amber-300">50 ~ 300ms</td>
+                <td class="p-3">Micro SD 내장 (1TB) /<br>FTP 스냅샷 전송</td>
+                <td class="p-3 font-semibold text-gray-200">약 29만~35만원<br><span class="text-[10px] text-gray-500">(렌즈/하우징별도)</span></td>
+                <td class="p-3">
+                  <ul class="list-disc list-inside text-[11px] space-y-0.5 text-gray-300">
+                    <li>본체-렌즈 분리형 (8m 케이블)</li>
+                    <li>DFS 함체 내부 매립 최적화</li>
+                    <li>Alarm IN 접점 연동</li>
+                  </ul>
+                </td>
+              </tr>
+              <!-- Row 3 -->
+              <tr class="hover:bg-gray-800/40">
+                <td class="p-3 font-bold text-amber-400">
+                  Hikrobot MV-CS020-10GM
+                </td>
+                <td class="p-3">머신비전 / 2MP<br><span class="text-green-400">Global Shutter</span></td>
+                <td class="p-3 font-mono text-emerald-400 font-bold">&lt; 1ms (하드웨어)</td>
+                <td class="p-3">호스트 PC/Edge<br>Raw 비압축 전송</td>
+                <td class="p-3 font-semibold text-gray-200">$310 ~ $370<br><span class="text-[10px] text-gray-500">(약 40~50만원)</span></td>
+                <td class="p-3">
+                  <ul class="list-disc list-inside text-[11px] space-y-0.5 text-gray-300">
+                    <li>1ms 미만 물리적 오차 포착</li>
+                    <li>Hirose 6핀 GPIO 직결</li>
+                    <li>독립 구동 불가 (PC 필요)</li>
+                  </ul>
+                </td>
+              </tr>
+              <!-- Row 4 -->
+              <tr class="hover:bg-gray-800/40">
+                <td class="p-3 font-bold text-amber-400">
+                  AR0234 USB 3.0 모듈
+                </td>
+                <td class="p-3">임베디드 모듈 / 2.3MP<br><span class="text-green-400">Global Shutter</span></td>
+                <td class="p-3 font-mono text-emerald-400 font-bold">1 ~ 5ms (HW Pin)</td>
+                <td class="p-3">라즈베리파이/젯슨<br>로컬 저장</td>
+                <td class="p-3 font-semibold text-gray-200">$30 ~ $250<br><span class="text-[10px] text-gray-500">(약 4만~30만원)</span></td>
+                <td class="p-3">
+                  <ul class="list-disc list-inside text-[11px] space-y-0.5 text-gray-300">
+                    <li>가성비 극대화 모듈형</li>
+                    <li>UVC 플러그 앤 플레이</li>
+                    <li>함체 내부 방수 설계 필요</li>
+                  </ul>
+                </td>
+              </tr>
+              <!-- Row 5 -->
+              <tr class="hover:bg-gray-800/40">
+                <td class="p-3 font-bold text-amber-400">
+                  Dahua DHI-ITC237-PW6M
+                </td>
+                <td class="p-3">ITS ANPR / 2MP<br><span class="text-green-400">Global Shutter</span></td>
+                <td class="p-3 font-mono text-amber-300">30 ~ 100ms</td>
+                <td class="p-3">SD 카드 / NVR<br>스냅샷 + 비디오</td>
+                <td class="p-3 font-semibold text-gray-200">$700 ~ $1,600<br><span class="text-[10px] text-gray-500">(약 90만~210만원)</span></td>
+                <td class="p-3">
+                  <ul class="list-disc list-inside text-[11px] space-y-0.5 text-gray-300">
+                    <li>온보드 ANPR (차번 인식)</li>
+                    <li>주차 차단기 릴레이 직접 제어</li>
+                    <li>스탠드얼론 무인 운용</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Speed & Latency Physics Formula Card -->
+      <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-800 text-xs space-y-2">
+        <h3 class="font-bold text-amber-400 flex items-center space-x-1">
+          <i data-lucide="calculator" class="w-4 h-4"></i>
+          <span>속도별 지연시간(Trigger Latency)에 따른 차량 이동 거리 계산</span>
+        </h3>
+        <p class="text-gray-300 leading-relaxed">
+          시속 $100\text{km/h}$ 주행 차량은 $1\text{ms}$ 동안 약 $2.78\text{cm}$ 를 이동합니다. 지연시간에 따라 포착 위치에 차이가 발생합니다.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+          <div class="bg-gray-950 p-2.5 rounded border border-gray-800">
+            <span class="text-emerald-400 font-bold">머신비전 (1ms 지연)</span>
+            <p class="text-gray-300 mt-0.5">이동 거리: <strong>2.78 cm</strong> (타깃 정중앙 포착)</p>
+          </div>
+          <div class="bg-gray-950 p-2.5 rounded border border-gray-800">
+            <span class="text-amber-400 font-bold">교통 전용 IP (50ms 지연)</span>
+            <p class="text-gray-300 mt-0.5">이동 거리: <strong>1.39 m</strong> (약간의 밀림 포착)</p>
+          </div>
+          <div class="bg-gray-950 p-2.5 rounded border border-gray-800">
+            <span class="text-red-400 font-bold">일반 감시 IP (200ms 지연)</span>
+            <p class="text-gray-300 mt-0.5">이동 거리: <strong>5.56 m</strong> (화면 밖 이탈 위험)</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: 하드웨어 결선 가이드 -->
+    <section id="tab-wiring" class="tab-content hidden space-y-4">
+      <div class="bg-gray-900 p-4 rounded-xl border border-gray-800">
+        <h2 class="text-sm font-bold text-amber-400 flex items-center space-x-2 mb-1">
+          <i data-lucide="cpu" class="w-4 h-4"></i>
+          <span>카메라 후면 알람 포트(Alarm IN) 유선 결선 인터페이스</span>
+        </h2>
+        <p class="text-xs text-gray-300">
+          속도 센서/제어 보드와 카메라 간 유선 셔터링 연동을 위한 신호 방식 선택 및 핀맵 안내입니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Dry Contact -->
+        <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+            <span class="font-bold text-xs text-emerald-400">Dry Contact (무전압 접점 방식)</span>
+            <span class="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">가장 추천</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            외부 속도 측정 보드의 릴레이 스위치가 단락(Short)될 때 카메라 Alarm IN과 GND가 도통되어 셔터가 작동합니다.
+          </p>
+          <!-- SVG Circuit Diagram -->
+          <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 flex items-center justify-center">
+            <svg class="w-full h-32" viewBox="0 0 300 120" fill="none">
+              <!-- Sensor Controller Block -->
+              <rect x="10" y="20" width="90" height="80" rx="8" fill="#1f2937" stroke="#4b5563" stroke-width="2"/>
+              <text x="55" y="55" text-anchor="middle" fill="#9ca3af" font-size="10" font-weight="bold">속도 제어 보드</text>
+              <text x="55" y="75" text-anchor="middle" fill="#10b981" font-size="9">(Relay Output)</text>
+
+              <!-- Switch Line -->
+              <circle cx="100" cy="45" r="4" fill="#10b981"/>
+              <circle cx="100" cy="75" r="4" fill="#10b981"/>
+              <line x1="100" y1="45" x2="130" y2="45" stroke="#10b981" stroke-width="2"/>
+              <line x1="100" y1="75" x2="130" y2="75" stroke="#10b981" stroke-width="2"/>
+
+              <!-- Contact Wire -->
+              <path d="M 130 45 L 180 45 M 130 75 L 180 75" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4"/>
+
+              <!-- Camera Unit Block -->
+              <rect x="180" y="20" width="110" height="80" rx="8" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+              <text x="235" y="45" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="bold">한화비전 카메라</text>
+              <rect x="190" y="60" width="40" height="18" rx="3" fill="#374151"/>
+              <text x="210" y="72" text-anchor="middle" fill="#ffffff" font-size="8">ALARM IN</text>
+              <rect x="240" y="60" width="40" height="18" rx="3" fill="#374151"/>
+              <text x="260" y="72" text-anchor="middle" fill="#ffffff" font-size="8">GND</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Wet Contact -->
+        <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+            <span class="font-bold text-xs text-amber-400">Wet Contact (유전압 펄스 방식)</span>
+            <span class="text-[10px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-800">전압 연동</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            속도 측정 보드에서 5V ~ 12V DC 펄스 신호를 출력할 때 포토커플러를 통해 인가하여 셔터를 작동시킵니다.
+          </p>
+          <!-- SVG Circuit Diagram -->
+          <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 flex items-center justify-center">
+            <svg class="w-full h-32" viewBox="0 0 300 120" fill="none">
+              <!-- Sensor Controller Block -->
+              <rect x="10" y="20" width="90" height="80" rx="8" fill="#1f2937" stroke="#4b5563" stroke-width="2"/>
+              <text x="55" y="55" text-anchor="middle" fill="#9ca3af" font-size="10" font-weight="bold">속도 제어 보드</text>
+              <text x="55" y="75" text-anchor="middle" fill="#ef4444" font-size="9">(+12V Pulse)</text>
+
+              <!-- Line Pulse -->
+              <line x1="100" y1="45" x2="180" y2="45" stroke="#ef4444" stroke-width="2"/>
+              <line x1="100" y1="75" x2="180" y2="75" stroke="#6b7280" stroke-width="2"/>
+
+              <!-- Camera Unit Block -->
+              <rect x="180" y="20" width="110" height="80" rx="8" fill="#111827" stroke="#ef4444" stroke-width="2"/>
+              <text x="235" y="45" text-anchor="middle" fill="#ef4444" font-size="10" font-weight="bold">머신비전 GPIO</text>
+              <rect x="190" y="60" width="40" height="18" rx="3" fill="#374151"/>
+              <text x="210" y="72" text-anchor="middle" fill="#ffffff" font-size="8">Line0 (+)</text>
+              <rect x="240" y="60" width="40" height="18" rx="3" fill="#374151"/>
+              <text x="260" y="72" text-anchor="middle" fill="#ffffff" font-size="8">Line0 (-)</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur border-t border-gray-800 py-2 px-4 z-40">
+    <div class="max-w-md mx-auto flex items-center justify-around text-xs">
+      <button onclick="switchTab('tab-monitor')" id="nav-tab-monitor" class="nav-btn flex flex-col items-center space-y-1 text-amber-400 font-bold">
+        <i data-lucide="gauge" class="w-5 h-5"></i>
+        <span>실시간 모니터</span>
+      </button>
+      <button onclick="switchTab('tab-logs')" id="nav-tab-logs" class="nav-btn flex flex-col items-center space-y-1 text-gray-400">
+        <i data-lucide="list" class="w-5 h-5"></i>
+        <span>차량별 로그</span>
+      </button>
+      <button onclick="switchTab('tab-specs')" id="nav-tab-specs" class="nav-btn flex flex-col items-center space-y-1 text-gray-400">
+        <i data-lucide="camera" class="w-5 h-5"></i>
+        <span>카메라 비교</span>
+      </button>
+      <button onclick="switchTab('tab-wiring')" id="nav-tab-wiring" class="nav-btn flex flex-col items-center space-y-1 text-gray-400">
+        <i data-lucide="cpu" class="w-5 h-5"></i>
+        <span>하드웨어 배선</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Detail Snapshot Modal -->
+  <div id="snapshotModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="shield-alert" class="w-5 h-5 text-amber-400"></i>
+          <h3 class="font-bold text-sm text-white">과속 단속 스냅샷 (OCR 오버레이)</h3>
+        </div>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-4 overflow-y-auto space-y-3">
+        <div class="rounded-xl overflow-hidden border border-gray-800 bg-black">
+          <img id="modalImg" src="" alt="CCTV Capture" class="w-full h-auto block">
+        </div>
+        <div id="modalInfo" class="bg-gray-950 p-3 rounded-xl border border-gray-800 text-xs space-y-1 font-mono text-gray-300">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+      <div class="p-3 bg-gray-950 border-t border-gray-800 flex justify-end space-x-2">
+        <button onclick="downloadSnapshot()" class="bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs py-2 px-4 rounded-lg flex items-center space-x-1">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>이미지 다운로드</span>
+        </button>
+        <button onclick="closeModal()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-2 px-4 rounded-lg">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript App Logic -->
+  <script>
+    // Lucide Icons Init
+    lucide.createIcons();
+
+    // App State Variables
+    let roadLimit = 30; // km/h
+    let selectedCamera = "TNO-7180RLP";
+    let isSoundEnabled = true;
+    let autoLoopTimer = null;
+    let activeVehicles = [];
+    let logsData = [];
+    let activeModalItem = null;
+
+    // Canvas Road Setup
+    const canvas = document.getElementById('roadCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Korean License Plate Generator
+    function generateLicensePlate() {
+      const region = ["서울", "경기", "부산", "대구", "인천", "강원", "전남"][Math.floor(Math.random() * 7)];
+      const num1 = Math.floor(Math.random() * 90 + 10);
+      const hangul = ["가", "나", "다", "라", "마", "거", "너", "더", "러", "머", "버", "서", "어", "저"][Math.floor(Math.random() * 14)];
+      const num2 = Math.floor(Math.random() * 9000 + 1000);
+      return `${num1}${hangul} ${num2}`;
+    }
+
+    // Vehicle Colors
+    const carColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#f3f4f6', '#1f2937'];
+
+    // Spawn Vehicle Entity
+    function spawnVehicle(type = 'normal') {
+      const speedOffset = type === 'overspeed' ? Math.floor(Math.random() * 25 + 15) : Math.floor(Math.random() * 8 - 15);
+      const targetSpeed = Math.max(12, roadLimit + speedOffset);
+      
+      const vehicle = {
+        id: Date.now() + Math.random(),
+        x: -80,
+        y: canvas.height / 2 - 12,
+        width: 55,
+        height: 26,
+        speed: targetSpeed,
+        color: carColors[Math.floor(Math.random() * carColors.length)],
+        plate: generateLicensePlate(),
+        radarTriggered: false,
+        cameraTriggered: false
+      };
+      activeVehicles.push(vehicle);
+    }
+
+    // Web Audio API Audio Synthesizer (Zero External File Dependency)
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function toggleSound() {
+      isSoundEnabled = !isSoundEnabled;
+      const soundIcon = document.getElementById('soundIcon');
+      const soundLabel = document.getElementById('soundLabel');
+      if (isSoundEnabled) {
+        soundIcon.setAttribute('data-lucide', 'volume-2');
+        soundIcon.className = "w-4 h-4 text-green-400";
+        soundLabel.innerText = "음향 ON";
+      } else {
+        soundIcon.setAttribute('data-lucide', 'volume-x');
+        soundIcon.className = "w-4 h-4 text-gray-500";
+        soundLabel.innerText = "음향 OFF";
+      }
+      lucide.createIcons();
+    }
+
+    // Sound 1: Radar Beep
+    function playRadarSound() {
+      if (!isSoundEnabled) return;
+      initAudio();
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch(e){}
+    }
+
+    // Sound 2: Mechanical Camera Shutter Click
+    function playShutterSound() {
+      if (!isSoundEnabled) return;
+      initAudio();
+      try {
+        const bufferSize = audioCtx.sampleRate * 0.05;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1000;
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        noise.start();
+      } catch(e){}
+    }
+
+    // Main Simulation Animation Loop
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Road Marking
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Lane Dash
+      ctx.strokeStyle = '#374151';
+      ctx.setLineDash([15, 15]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const radarX = canvas.width * 0.33;
+      const cameraX = canvas.width * 0.66;
+
+      // Update & Draw Vehicles
+      for (let i = activeVehicles.length - 1; i >= 0; i--) {
+        const v = activeVehicles[i];
+        v.x += (v.speed / 10);
+
+        // Check Radar Trigger Zone
+        if (v.x >= radarX && !v.radarTriggered) {
+          v.radarTriggered = true;
+          updateDFSDisplay(v.speed);
+          playRadarSound();
+          triggerPulseAnimation();
+        }
+
+        // Check Camera Trap Zone
+        if (v.x >= cameraX && !v.cameraTriggered) {
+          v.cameraTriggered = true;
+          if (v.speed > roadLimit) {
+            triggerShutter(v);
+          }
+        }
+
+        // Draw Car Graphic
+        ctx.fillStyle = v.color;
+        ctx.beginPath();
+        ctx.roundRect(v.x, v.y, v.width, v.height, 6);
+        ctx.fill();
+
+        // Car Roof Window
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(v.x + 12, v.y + 4, 25, 18);
+
+        // Speed Badge Above Car
+        ctx.fillStyle = v.speed > roadLimit ? '#ef4444' : '#10b981';
+        ctx.font = '9px font-digital, sans-serif';
+        ctx.fillText(`${v.speed}km/h`, v.x + 5, v.y - 5);
+
+        // Remove Off-screen
+        if (v.x > canvas.width + 100) {
+          activeVehicles.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+
+    // Update DFS Digital Display
+    function updateDFSDisplay(speed) {
+      const dfsSpeedDisplay = document.getElementById('dfsSpeedDisplay');
+      const dfsStatusMsg = document.getElementById('dfsStatusMsg');
+      dfsSpeedDisplay.innerText = speed < 10 ? `0${speed}` : speed;
+
+      if (speed > roadLimit) {
+        dfsSpeedDisplay.className = "font-digital text-5xl font-black text-red-500 tracking-wider animate-bounce py-1";
+        dfsStatusMsg.innerText = "속도 위반! 서행하세요";
+        dfsStatusMsg.className = "text-xs font-bold text-red-400 mt-1";
+      } else {
+        dfsSpeedDisplay.className = "font-digital text-5xl font-black text-emerald-400 tracking-wider py-1";
+        dfsStatusMsg.innerText = "안전 운행 중";
+        dfsStatusMsg.className = "text-xs font-bold text-emerald-400 mt-1";
+      }
+    }
+
+    // Trigger Alarm IN Pulse Animation
+    function triggerPulseAnimation() {
+      const pulseDot = document.getElementById('pulseDot');
+      const pulseText = document.getElementById('pulseText');
+      
+      pulseDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping";
+      pulseText.innerText = "접점 트리거 인가 (HIGH)";
+      pulseText.className = "font-mono text-amber-400 font-bold";
+
+      setTimeout(() => {
+        pulseDot.className = "w-2.5 h-2.5 rounded-full bg-gray-600";
+        pulseText.innerText = "대기중 (OFF)";
+        pulseText.className = "font-mono text-gray-400";
+      }, 500);
+    }
+
+    // Camera Shutter Execution & Snapshot Generation
+    function triggerShutter(vehicle) {
+      playShutterSound();
+      
+      // Flash Overlay Effect
+      const flashOverlay = document.getElementById('flashOverlay');
+      flashOverlay.className = "fixed inset-0 pointer-events-none z-50 shutter-flash";
+      setTimeout(() => {
+        flashOverlay.className = "fixed inset-0 pointer-events-none z-50 opacity-0";
+      }, 300);
+
+      // Generate OCR Snapshot Image on Offscreen Canvas
+      const snapshotUrl = generateSnapshotCanvas(vehicle);
+
+      // Create Log Record
+      const logItem = {
+        id: Date.now(),
+        timestamp: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
+        date: new Date().toLocaleDateString('ko-KR'),
+        plate: vehicle.plate,
+        speed: vehicle.speed,
+        limit: roadLimit,
+        isViolation: vehicle.speed > roadLimit,
+        camera: selectedCamera,
+        imageUrl: snapshotUrl
+      };
+
+      logsData.unshift(logItem);
+      updateStats();
+      renderRecentSnapshots();
+      renderLogsTable();
+    }
+
+    // Generate Synthetic CCTV OCR Snapshot using Canvas API
+    function generateSnapshotCanvas(vehicle) {
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = 480;
+      offCanvas.height = 320;
+      const octx = offCanvas.getContext('2d');
+
+      // Background
+      octx.fillStyle = '#0f172a';
+      octx.fillRect(0, 0, 480, 320);
+
+      // Simulated Road View
+      octx.fillStyle = '#1e293b';
+      octx.fillRect(0, 100, 480, 220);
+
+      // Vehicle
+      octx.fillStyle = vehicle.color;
+      octx.roundRect(140, 140, 200, 100, 12);
+      octx.fill();
+
+      // License Plate Box
+      octx.fillStyle = '#ffffff';
+      octx.fillRect(200, 200, 80, 25);
+      octx.strokeStyle = '#000000';
+      octx.lineWidth = 1.5;
+      octx.strokeRect(200, 200, 80, 25);
+      octx.fillStyle = '#000000';
+      octx.font = 'bold 11px sans-serif';
+      octx.fillText(vehicle.plate, 205, 217);
+
+      // CCTV Header Banner
+      octx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+      octx.fillRect(0, 0, 480, 45);
+
+      octx.fillStyle = '#f59e0b';
+      octx.font = 'bold 12px monospace';
+      octx.fillText(`CAM: ${selectedCamera} [DFS TRAP]`, 12, 18);
+
+      octx.fillStyle = '#ffffff';
+      octx.font = '11px monospace';
+      octx.fillText(`TIME: ${new Date().toISOString()}`, 12, 34);
+
+      // Speed Watermark
+      octx.fillStyle = vehicle.speed > roadLimit ? '#ef4444' : '#10b981';
+      octx.font = 'bold 18px monospace';
+      octx.fillText(`SPEED: ${vehicle.speed} km/h (LIMIT ${roadLimit})`, 240, 24);
+
+      return offCanvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    // Manual Shutter Trigger Button
+    function manualTriggerShutter() {
+      const mockCar = {
+        plate: generateLicensePlate(),
+        speed: roadLimit + Math.floor(Math.random() * 20 + 10),
+        color: carColors[Math.floor(Math.random() * carColors.length)]
+      };
+      triggerShutter(mockCar);
+    }
+
+    // Update Top Dashboard Statistics
+    function updateStats() {
+      document.getElementById('stat-total').innerText = `${logsData.length} 대`;
+      const overCount = logsData.filter(l => l.isViolation).length;
+      document.getElementById('stat-overspeed').innerText = `${overCount} 건`;
+    }
+
+    // Render Recent Snapshots Gallery
+    function renderRecentSnapshots() {
+      const container = document.getElementById('recentSnapshotsList');
+      if (logsData.length === 0) {
+        container.innerHTML = `<p class="w-full text-center py-4 text-xs text-gray-500">아직 촬영된 단속 데이터가 없습니다.</p>`;
+        return;
+      }
+
+      container.innerHTML = logsData.slice(0, 8).map(item => `
+        <div onclick='openModal(${JSON.stringify(item)})' class="flex-shrink-0 w-36 bg-gray-950 border border-gray-800 rounded-lg overflow-hidden cursor-pointer hover:border-amber-500 transition">
+          <img src="${item.imageUrl}" class="w-full h-20 object-cover block">
+          <div class="p-1.5 font-mono text-[10px] space-y-0.5">
+            <div class="flex justify-between font-bold text-gray-200">
+              <span>${item.plate}</span>
+              <span class="${item.isViolation ? 'text-red-400' : 'text-emerald-400'}">${item.speed}km/h</span>
+            </div>
+            <div class="text-gray-500 text-[9px] truncate">${item.timestamp}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Render Table Logs
+    function renderLogsTable() {
+      const tbody = document.getElementById('logsTableBody');
+      const filtered = getFilteredLogs();
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">검색된 차량 로그가 없습니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => `
+        <tr class="hover:bg-gray-800/50">
+          <td class="p-3 font-mono text-gray-400">${item.timestamp}</td>
+          <td class="p-3 font-bold text-gray-100">${item.plate}</td>
+          <td class="p-3 font-mono font-bold ${item.isViolation ? 'text-red-400' : 'text-emerald-400'}">${item.speed} km/h</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.isViolation ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}">
+              ${item.isViolation ? '과속 위반' : '안전 운행'}
+            </span>
+          </td>
+          <td class="p-3 text-gray-400">${item.camera}</td>
+          <td class="p-3 text-center">
+            <button onclick='openModal(${JSON.stringify(item)})' class="bg-gray-800 hover:bg-gray-700 text-amber-400 px-2 py-1 rounded text-[11px] font-medium border border-gray-700">
+              보기
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getFilteredLogs() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const status = document.getElementById('filterStatus').value;
+
+      return logsData.filter(item => {
+        const matchesQuery = item.plate.toLowerCase().includes(query) || item.speed.toString().includes(query);
+        const matchesStatus = status === 'ALL' || (status === 'OVER' && item.isViolation) || (status === 'SAFE' && !item.isViolation);
+        return matchesQuery && matchesStatus;
+      });
+    }
+
+    function filterLogs() {
+      renderLogsTable();
+    }
+
+    function clearAllLogs() {
+      if (confirm("모든 차량 모니터링 로그를 삭제하시겠습니까?")) {
+        logsData = [];
+        updateStats();
+        renderRecentSnapshots();
+        renderLogsTable();
+      }
+    }
+
+    // Modal Actions
+    function openModal(item) {
+      activeModalItem = item;
+      document.getElementById('modalImg').src = item.imageUrl;
+      document.getElementById('modalInfo').innerHTML = `
+        <div class="grid grid-cols-2 gap-1.5">
+          <div><span class="text-gray-500">차량 번호:</span> <strong class="text-white">${item.plate}</strong></div>
+          <div><span class="text-gray-500">측정 속도:</span> <strong class="${item.isViolation ? 'text-red-400' : 'text-emerald-400'}">${item.speed} km/h</strong></div>
+          <div><span class="text-gray-500">제한 속도:</span> <span class="text-amber-400">${item.limit} km/h</span></div>
+          <div><span class="text-gray-500">카메라 모델:</span> <span class="text-gray-200">${item.camera}</span></div>
+          <div class="col-span-2"><span class="text-gray-500">촬영 일시:</span> <span class="text-gray-300">${item.date} ${item.timestamp}</span></div>
+        </div>
+      `;
+      const modal = document.getElementById('snapshotModal');
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('snapshotModal');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    function downloadSnapshot() {
+      if (!activeModalItem) return;
+      const a = document.createElement('a');
+      a.href = activeModalItem.imageUrl;
+      a.download = `DFS_Capture_${activeModalItem.plate.replace(/\s+/g, '_')}_${activeModalItem.speed}kmh.jpg`;
+      a.click();
+    }
+
+    // Tab Switcher
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-amber-400', 'font-bold');
+        btn.classList.add('text-gray-400');
+      });
+
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      if (activeNav) {
+        activeNav.classList.remove('text-gray-400');
+        activeNav.classList.add('text-amber-400', 'font-bold');
+      }
+    }
+
+    // Settings Switchers
+    function setRoadLimit(limit) {
+      roadLimit = limit;
+      document.getElementById('stat-limit').innerText = `${limit} km/h`;
+      document.getElementById('dfsZoneLabel').innerText = limit === 30 ? '어린이 보호구역' : '일반 도로 구역';
+      document.getElementById('dfsLimitCircle').innerText = limit;
+
+      ['30', '50', '80'].forEach(l => {
+        const btn = document.getElementById(`limit-${l}-btn`);
+        if (l == limit) {
+          btn.className = "px-2.5 py-1 rounded bg-amber-500 text-gray-950 font-bold border border-amber-400";
+        } else {
+          btn.className = "px-2.5 py-1 rounded bg-gray-800 text-gray-300 font-medium border border-gray-700";
+        }
+      });
+    }
+
+    function changeCameraModel(model) {
+      selectedCamera = model;
+      document.getElementById('stat-camera').innerText = model;
+    }
+
+    function toggleAutoLoop() {
+      const btnLabel = document.getElementById('autoLoopLabel');
+      if (autoLoopTimer) {
+        clearInterval(autoLoopTimer);
+        autoLoopTimer = null;
+        btnLabel.innerText = "자동 트래픽 시작";
+      } else {
+        autoLoopTimer = setInterval(() => {
+          const type = Math.random() > 0.6 ? 'overspeed' : 'normal';
+          spawnVehicle(type);
+        }, 3000);
+        btnLabel.innerText = "자동 트래픽 정지";
+      }
+    }
+  </script>
+</body>
+</html>

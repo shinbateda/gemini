@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LostFindUs 디자인 검토 대시보드</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body {
+      font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      overflow-y: hidden; /* 전체 페이지 스크롤 대신 내부 테이블 스크롤 사용 */
+    }
+    
+    /* 스크롤바 커스텀 */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* 테이블 컨테이너 (상하/좌우 스크롤 지원 영역) */
+    .table-container {
+      max-height: calc(100vh - 300px); /* 상단 영역을 제외한 높이 자동 계산 */
+      min-height: 400px;
+      overflow: auto;
+      position: relative;
+    }
+    
+    /* === 스크롤 하단 이동 시 헤더 고정 (상단 틀고정) === */
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: #f8fafc;
+      box-shadow: inset 0 -1px 0 #e2e8f0; /* 테두리 끊김 방지를 위한 그림자 */
+    }
+
+    /* === 스크롤 우측 이동 시 열 고정 (좌측 틀고정) === */
+    .sticky-col-1 { position: sticky; left: 0; min-width: 50px; max-width: 50px; }
+    .sticky-col-2 { position: sticky; left: 50px; min-width: 130px; max-width: 130px; }
+    .sticky-col-3 { position: sticky; left: 180px; min-width: 220px; max-width: 220px; }
+    .sticky-col-2-alt { position: sticky; left: 50px; min-width: 220px; max-width: 220px; }
+    
+    /* 좌측 고정되는 데이터 셀 */
+    tbody td.sticky-col-1, 
+    tbody td.sticky-col-2, 
+    tbody td.sticky-col-3, 
+    tbody td.sticky-col-2-alt {
+      background-color: #ffffff;
+      z-index: 20; /* 일반 데이터보다 위에 위치 */
+    }
+
+    /* 좌측과 상단이 동시에 고정되는 헤더 모서리 영역 */
+    thead th.sticky-col-1, 
+    thead th.sticky-col-2, 
+    thead th.sticky-col-3, 
+    thead th.sticky-col-2-alt {
+      z-index: 30; /* 헤더와 본문 고정열 모두보다 최상위에 위치 */
+    }
+
+    /* 고정 영역의 우측 끝나는 지점에 옅은 그림자 효과 (틀고정 입체감) */
+    tbody td.sticky-shadow {
+      box-shadow: inset -1px 0 0 #e2e8f0, 4px 0 8px -2px rgba(0,0,0,0.05);
+    }
+    thead th.sticky-shadow {
+      box-shadow: inset -1px -1px 0 #e2e8f0, 4px 0 8px -2px rgba(0,0,0,0.05);
+    }
+
+    /* 마우스 호버 시 틀고정된 열까지 배경색이 칠해지도록 처리 */
+    tr.hover-tr:hover td {
+      background-color: #f0f9ff !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 p-4 sm:p-6 lg:p-8 min-h-screen">
+
+  <div class="max-w-[1600px] mx-auto space-y-6">
+    
+    <!-- 헤더 및 제출 버튼 -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 flex flex-col md:flex-row md:items-start justify-between gap-4">
+      <div class="flex items-center space-x-3 mt-1">
+        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+          <i data-lucide="layout-list" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">LostFindUs 디자인 검토 의견</h1>
+          <p class="text-slate-500 mt-1 text-sm">총 40건의 1~5차 내/외부 전문가 디자인 검토 및 수용 여부 분석표 (자동 저장 중)</p>
+        </div>
+      </div>
+      
+      <div class="flex flex-col md:items-end gap-2">
+        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <button onclick="openModal()" class="flex items-center px-5 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 w-full sm:w-auto justify-center">
+            <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
+            추가 검토의견 제출 및 현황보기
+          </button>
+          <button onclick="openManualModal()" class="flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto justify-center">
+            <i data-lucide="book-open" class="w-4 h-4 mr-2"></i>
+            사용자 설명서
+          </button>
+        </div>
+
+        <!-- 전화 걸기 버튼 -->
+        <div class="flex items-center text-xs text-slate-500 mt-1 justify-center md:justify-end w-full">
+          <span class="mr-2">의견 충돌 문의 : 신환섭</span>
+          <a href="tel:010-9181-7570" title="전화 걸기" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors bg-blue-50 px-2 py-1 rounded-md">
+            <i data-lucide="phone" class="w-3 h-3 mr-1"></i>
+            010-9181-7570
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 동의 현황 요약 바 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <i data-lucide="check-square" class="w-5 h-5 text-blue-600"></i>
+        <span class="font-bold text-slate-800">검토자 동의 여부 현황</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-sm bg-slate-50 px-4 py-2 rounded-lg border border-slate-100" id="agreement-stats">
+        <!-- JS rendered -->
+      </div>
+      <button onclick="resetData()" class="text-xs text-slate-400 hover:text-rose-500 underline underline-offset-2 transition-colors ml-auto sm:ml-0">
+        초기화
+      </button>
+    </div>
+
+    <!-- 탭 네비게이션 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-2 overflow-x-auto">
+      <nav id="tab-container" class="flex space-x-2 min-w-max" aria-label="Tabs">
+        <!-- 탭 버튼들이 JS로 렌더링됩니다 -->
+      </nav>
+    </div>
+
+    <!-- 메인 데이터 테이블 -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <!-- 테이블 컨테이너에 스크롤 적용 -->
+      <div class="table-container bg-slate-50">
+        <table class="min-w-full divide-y divide-slate-200">
+          <thead class="bg-slate-50">
+            <tr id="table-header">
+              <!-- 헤더가 JS로 렌더링됩니다 -->
+            </tr>
+          </thead>
+          <tbody id="table-body" class="bg-white divide-y divide-slate-100">
+            <!-- 데이터 행들이 JS로 렌더링됩니다 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 리포트 결과 모달 (기본 숨김) -->
+  <div id="report-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl flex flex-col max-h-[95vh] overflow-hidden border border-slate-200">
+      
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h2 class="text-xl font-bold text-slate-800 flex items-center">
+          <i data-lucide="bar-chart-2" class="w-5 h-5 mr-2 text-blue-600"></i>
+          디자인 검토 종합 현황 리포트 (전체)
+        </h2>
+        <button onclick="closeModal()" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-hidden bg-slate-100 p-4 min-h-[500px]">
+        <div class="w-full h-full bg-white rounded-xl shadow-inner border border-slate-200 overflow-hidden relative">
+          <iframe id="report-iframe" class="w-full h-full absolute inset-0 border-none"></iframe>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-between items-center">
+        <button onclick="downloadHtml()" class="flex items-center px-5 py-2.5 text-slate-700 bg-slate-100 hover:bg-slate-200 font-bold rounded-lg transition-colors text-sm shadow-sm border border-slate-200">
+          <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+          HTML 문서로 저장
+        </button>
+        
+        <button onclick="shareKakao()" class="flex items-center px-6 py-2.5 bg-[#FEE500] text-[#191919] font-bold rounded-lg hover:bg-[#FADA0A] transition-colors shadow-sm">
+          <i data-lucide="message-circle" class="w-5 h-5 mr-2 fill-current"></i>
+          카카오톡으로 공유하기
+        </button>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- 사용자 설명서 모달 -->
+  <div id="manual-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-200">
+      
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h2 class="text-xl font-bold text-slate-800 flex items-center">
+          <i data-lucide="book-open" class="w-5 h-5 mr-2 text-blue-600"></i>
+          사용자 매뉴얼
+        </h2>
+        <button onclick="closeManualModal()" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 sm:p-8 bg-white">
+        <div class="space-y-8">
+          <section>
+            <h3 class="font-bold text-lg text-slate-900 mb-3 flex items-center">
+              <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">1</span>
+              브라우저 준비 (모바일)
+            </h3>
+            <ul class="list-disc list-inside pl-2 space-y-2 text-slate-600 text-sm sm:text-base leading-relaxed">
+              <li><strong>'Google Chrome'</strong> 앱 설치를 권장합니다.</li>
+              <li><a href="https://play.google.com/store/apps/details?id=com.android.chrome" target="_blank" class="text-blue-600 hover:underline break-all">크롬 앱 다운로드 링크 (Google Play)</a></li>
+              <li>크롬 앱 설치 후, 전달받으신 <strong>HTML 파일</strong>을 선택합니다.</li>
+              <li>파일을 열 때 <span class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800">크롬(Chrome) 앱 연동</span>을 선택하여 HTML 파일을 실행합니다.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 class="font-bold text-lg text-slate-900 mb-3 flex items-center">
+              <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">2</span>
+              검토 및 추가 의견 작성
+            </h3>
+            <ul class="list-disc list-inside pl-2 space-y-2 text-slate-600 text-sm sm:text-base leading-relaxed">
+              <li>아이티에스뱅크의 분석결과 및 수용내용에 대해 <strong>[동의/미동의]</strong> 여부를 체크합니다.</li>
+              <li>미동의 시, 우측의 <strong>추가 검토의견 작성란</strong>에 사유를 기입합니다.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 class="font-bold text-lg text-slate-900 mb-3 flex items-center">
+              <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">3</span>
+              결과 제출 및 전송
+            </h3>
+            <ul class="list-disc list-inside pl-2 space-y-2 text-slate-600 text-sm sm:text-base leading-relaxed">
+              <li>작성이 완료되면 상단의 <strong class="text-slate-800">"추가 검토의견 제출 및 현황보기"</strong> 버튼을 선택합니다.</li>
+              <li>생성된 결과 리포트를 확인한 후, <strong>다운로드(HTML/PDF)</strong> 또는 <strong>카카오톡</strong> 버튼을 눌러 추가 검토 의견을 전달합니다.</li>
+            </ul>
+          </section>
+
+          <section class="bg-blue-50 p-5 rounded-xl border border-blue-100 mt-4">
+            <h3 class="font-bold text-slate-900 flex items-center mb-2">
+              <i data-lucide="phone-call" class="w-5 h-5 mr-2 text-blue-600"></i>
+              기타 문의 사항
+            </h3>
+            <p class="text-sm text-slate-700 mb-3">기타 시스템 이용 및 의견 조율과 관련한 문의 사항이 있으실 경우 아래 번호로 연락 부탁드립니다.</p>
+            <a href="tel:010-9181-7570" class="inline-flex items-center text-blue-700 font-extrabold text-lg hover:underline">
+              010-9181-7570
+            </a>
+          </section>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button onclick="closeManualModal()" class="px-6 py-2.5 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-700 transition-colors shadow-sm">
+          확인 (닫기)
+        </button>
+      </div>
+      
+    </div>
+  </div>
+
+  <script>
+    // 40개 데이터 세트
+    const reviewData = [
+      { id: 1, round: "1차(연구소 자체)", item: "온보딩 마찰 및 본인인증 지연", screen: "사용자 앱(App)", opinion: "• LostFindUs 앱의 초기 진입 흐름은 로그인 → 약관 4종 동의 → PASS 본인확인(CI/DI, 생년월일, 휴대폰 번호 수집) → 보호 설정 순으로 설계되어 있음\n• 비로그인 상태에서도 지도를 둘러볼 수 있게 허용하고, PASS 인증은 '피보호 대상 등록' 시점으로 지연할 필요가 있음.", analysis: "• 지도 둘러보기 기능은 비로그인 상태에서도 허용하여 먼저 서비스를 둘러볼 수 있게 구현\n• 가장 큰 마찰 요소인 PASS 본인확인 절차는 사용자가 실제로 '피보호 대상을 등록'하는 시점까지 미루어(지연 처리) 사용자의 초기 이탈을 방지함", pending: "• 보호자와 일반사용자간 진입시점 분리 여부 결정 필요", status: "Pendding", cost: "No" },
+      { id: 2, round: "1차(연구소 자체)", item: "서비스대상 반려견 한정", screen: "사용자 앱(App)", opinion: "• 출시범위를 반려견으로 집중하고 사람(배회노인, 발달장애인, 어린이) 및 물건 등은 카테고리에서 제외함", analysis: "• 스마트폰 앱은 동물만, 서버 웹은 동물과 사람 전부관리", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 3, round: "1차(연구소 자체)", item: "사용자 중심 용어 전수 순화", screen: "사용자 앱(App)", opinion: "• 지도 라벨 및 상세 화면에 Track-FOM, GUARDIAN, CITIZEN 등의 개발·기획 용어와 피보호대상이라는 직관적이지 못한 용어가 사용됨.", analysis: "• Track-FOM -> 찾기도우미(Track-FOM)\n• GUARDIAN -> 보호자\n• CITIZEN -> 일반시민", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 4, round: "1차(연구소 자체)", item: "구글맵 선택 사유", screen: "사용자 앱(App)", opinion: "• 국내 실종·위치 서비스는 카카오맵·네이버맵의 주소/POI 정확도가 높음.\n• 구글맵 선택 사유 문서화 및 지도 벤더 최종 결정 필요.", analysis: "• 수출 고려 구글 결정", pending: "• 없음", status: "Not accepted", cost: "No" },
+      { id: 5, round: "1차(연구소 자체)", item: "긴급찾기 결제 타이밍 및 고액 부담", screen: "사용자 앱(App)", opinion: "• 실종 발생 직후 3만~50만원의 상품권을 \"발행 후 취소 불가\" 조건으로 바로 결제하도록 설계됨.", analysis: "• 1차는 상품권 또는 커피쿠폰위주\n• 포인트 도입 시 5000Point 부터 가능하게 구현\n• 지역화폐 도입 가능시 적용", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 6, round: "1차(연구소 자체)", item: "제보자(비회원) 진입 경로", screen: "사용자 앱(App)", opinion: "• 제보하기 진입 시 비회원 로그인 강제 여부가 불투명함", analysis: "• 제보하기는 허위제보등을 방지하기위해 기존대로 SNS 간편로그인 필요", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 7, round: "1차(연구소 자체)", item: "제보자 보상 분배 미정", screen: "사용자 앱(App)", opinion: "• 구조완료 처리 시 기여 제보를 '1건만 선택'하도록 지정되어 있음.", analysis: "• 제보에 대한 보상 분배 기준 명문화 게시\n• 구조완료 처리 하는 보호자 최종 1인에게 지급되도록 함\n• 구조 과정이 투명하게 이뤄질수 있도록 제보에 대한 지행 과정 실시간 제보자와 보호자간 정보공유\n• 제보 단계: 제보자 보호자에게 제보 -> 보호자 제보확인 -> 제보확인 필요 -> 제보 확정 -> 구조완료처리(제보자 보상)", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 8, round: "1차(연구소 자체)", item: "보상 모델 이원화", screen: "사용자 앱(App)", opinion: "• 보상 모델 체계화: \"직접 보상(무료) + 상품권(플랫폼 안전 중개(수수료/에스크로))\" 이원화.", analysis: "• 유저 확보 우선 이므로 당근 모델 처럼 수익 창출보다 사용자 확보가 먼저 라고 판단.\n• 직접 보상(무료) : 플랫폼은 현상금만 게시, 당근처럼 1:1로 직접 해결(개별전화, 채팅등)", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 9, round: "2차(권혜인 박사)", item: "로그인", screen: "사용자 앱(App) S-001", opinion: "• 카카오·네이버·Google 소셜 로그인 및 비로그인(수집기로 사용)만 제공되며, 이메일/전화번호 기반 로그인이 누락되어 있는지 확인이 필요함.", analysis: "• 간편 오그인으로 이메일 로그인 배제", pending: "• 없음", status: "Not accepted", cost: "No" },
+      { id: 10, round: "2차(권혜인 박사)", item: "용어 이해도", screen: "사용자 앱(App) S-010", opinion: "• 'TRACK-FOM'과 같은 낯선 개발 내부 용어가 사용자에게 다소 어렵게 느껴지므로 직관적인 순화가 필요함.", analysis: "• Track-FOM -> 찾기도우미(Track-FOM)\n• Track-FOM은 앱 PRO 버젼에 옵션 적용 예정\n• Track-FOM 개념 특허 추진중", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 11, round: "2차(권혜인 박사)", item: "피보호대상 정보", screen: "사용자 앱(App) S-012", opinion: "• '긴급 통화' 버튼이 보호자의 연락처인지 용도 확인이 필요함.\n• 식별 정확도를 높이기 위해 피보호 대상 등록 시 다각도(정면, 측면, 특징 부위 등)의 사진을 여러 장 등록할 수 있도록 제안함.", analysis: "• '긴급 통화' 버튼 용도 : 보호자가 본인 스마트폰 전화번호를 오픈 하여 “긴급찾기요청” 할경우 제보자가 상세 내용을 제보하기 위해 보호자와 통화 하기 위함\n• 다각도 사진 등록 필요", pending: "• 보호자 “긴급찾기요청” 시 본인 스마트바트폰 전화번호 오픈 여부 결정 “체크박스” 필요", status: "Accept", cost: "No" },
+      { id: 12, round: "2차(권혜인 박사)", item: "상태 및 알림", screen: "사용자 앱(App) S-020", opinion: "• 기기 배터리가 단순 수치로만 표시되므로, 기기 방전으로 인한 단절을 막기 위해 배터리 20% 이하 시 '로컬 푸시 알림'을 제공할 것을 제안함.", analysis: "• 안심이(비콘) 배터리 20% 이하시 관제 서버의 안심이 관리에서 일괄적으로 관리하며 특정 비콘의 배터리가 부족시 서버 운용자에게 알람\n• 서버는 보호자에게 비콘 교체 또는 배터리 교환 권고 알림", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 13, round: "2차(권혜인 박사)", item: "계정 관리", screen: "사용자 앱(App) S-020", opinion: "• 가족 여러 명이 부모님이나 반려동물을 공동으로 케어하는 상황을 반영하여, 계정 공유 및 초대가 가능한 '복수 보호자' 기능을 추가로 제안함.", analysis: "• 복수 보호자 수용 적용", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 14, round: "2차(권혜인 박사)", item: "기기 상태 표기", screen: "사용자 앱(App) S-021", opinion: "• 기기가 '신호 없음' 상태가 되었을 때, 마지막 수신 시각과 위치가 표시되도록 정보 보완이 필요함.", analysis: "• 기반영", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 15, round: "2차(권혜인 박사)", item: "긴급찾기 (위치/보상)", screen: "사용자 앱(App) S-030", opinion: "• 등록 시 잘못 입력된 정보(위치, 사진 등)를 수정하거나 취소할 수 있는 오정보 정정 경로가 필요함.\n• 제공되는 상품권의 사용처 접근성이 낮을 수 있으므로 현금성 계좌 입금 옵션 도입을 검토하는 방안을 제안함.", analysis: "• 등록 시 위치, 사진 등 수정 가능토록 보완\n• 유저 확보 우선 이므로 당근 모델 처럼 수익 창출보다 사용자 확보가 먼저 라고 판단.\n• 직접 보상(무료) : 플랫폼은 현상금만 게시, 당근처럼 1:1로 직접 해결(개별전화, 채팅등)", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 16, round: "2차(권혜인 박사)", item: "제보 작성", screen: "사용자 앱(App) S-031", opinion: "• 상황 입력란(Placeholder)에 예시(예: \"흰 목줄을 하고 동쪽으로 이동 중이었어요\")를 넣어 제보자의 진입장벽을 낮춰야 함.\n• 제보 역시 잘못 등록한 사진이나 위치를 수정/취소할 수 있는 화면이 필요함.", analysis: "• 상황 입력란에 예시를 넣어 제보자의 진입장벽을 낮춤\n• 제보 사진 및 위치 변경은 어뷰징 방지를 위해 3회로 한정", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 17, round: "2차(권혜인 박사)", item: "제보 처리", screen: "사용자 앱(App) S-032", opinion: "• 보상금이 걸려 있어 장난 및 익명 제보가 남용될 수 있으므로, 어뷰징을 방지하기 위한 신고 기능(버튼) 도입이 필요함.", analysis: "• 제보에 대한 보호자가 신고할수 있도록 하고 2회 반복시 해당 제보자는 제보기능이 안되도록 차단", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 18, round: "2차(권혜인 박사)", item: "보상 알림", screen: "사용자 앱(App) S-050", opinion: "• 지급받은 상품권의 만료 임박 상태를 알려주는 별도의 알림 기능 추가가 필요함.", analysis: "• 상품권의 만료 임박 알림 기능 추가", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 19, round: "2차(권혜인 박사)", item: "동기부여 (게이미피케이션)", screen: "사용자 앱(App) S-060", opinion: "• 사용자의 자발적 제보를 독려하기 위해 누적 통계를 바탕으로 배지나 레벨 등을 부여하는 게이미피케이션 확장을 제안함.", analysis: "• 제보 누적에 대한 보상 체계 개념 및 제원 확보 방안등 선결해야함", pending: "• 보상 체계 개념 및 제원 확보 방안등 선결 필요", status: "Pendding", cost: "a lot of money" },
+      { id: 20, round: "2차(권혜인 박사)", item: "분쟁 대응 (마이페이지)", screen: "사용자 앱(App) S-060", opinion: "• 보상(돈) 및 에스크로 등 분쟁 소지가 있는 서비스임에도 고객센터가 보이지 않으므로, 마이페이지 내에 최소한 '문의하기'나 카카오톡 채널 연결이 필요함.", analysis: "• 마이페이지 내에 '문의하기'나 카카오톡 채널 추가 연동", pending: "• 없음", status: "Accept", cost: "a little" },
+      { id: 21, round: "3차(블랙야크 기획자)", item: "구조 완료 플로우", screen: "사용자 앱(App) D-06", opinion: "• 구조가 완료된 이후 피보호 대상 카드의 처리(보관, 삭제, 재등록) 및 일정 기간 후의 비공개/익명화 처리 프로세스가 명시되어야 함.", analysis: "• 구조가 완료된 이후 2주이후 기록 비공개 처리\n• 프로세스 등 명시", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 22, round: "3차(블랙야크 기획자)", item: "0. 총평 및 개요", screen: "사용자 앱(App)", opinion: "• 전체적인 UI/UX 완성도가 훌륭하며, 블루/네이비 톤이 서비스 특성상 필요한 신뢰감을 잘 잡아주고 있다고 평가함. 이타심과 이기심을 함께 끌어안으려는 기획 의도에 공감함.", analysis: "• 갑사합니다.", pending: "• 없음", status: "Accept", cost: "No" },
+      { id: 23, round: "3차(블랙야크 기획자)", item: "1. '비상용 툴'을 넘어선'매일의 산책' 디지털화", screen: "사용자 앱(App)", opinion: "• 현재의 실종 대응 프로세스는 훌륭하지만, 실종은 자주 발생하지 않으므로 평소에 앱을 켤 명분이 약함. BAC(블랙야크 알파인 클럽)의 성공 사례처럼 '매일의 강아지 산책'을 '동네 안심존 순찰 인증'으로 전환하여 평상시 접점을 늘려야 한다고 제안함.", analysis: "• '매일의 강아지 산책’ 기반영\n• '동네 안심존 순찰 인증' 미반영됨", pending: "• '동네 안심존 순찰 인증' 기능 추가시 보상(토큰 등) 필요함\n• 보상 체계 개념 및 제원 확보 방안등 선결 필요", status: "Pendding", cost: "a lot of money" },
+      { id: 24, round: "3차(블랙야크 기획자)", item: "2. 보상보다는'소속감과 자부심' 중심", screen: "사용자 앱(App)", opinion: "• 보상이 주 목적이 되면 리워드만 챙기는 체리피커 유저가 늘어나 커뮤니티 지속이 어려움. 따라서 현금성 기프티콘보다 \"우리 동네 안심 파수꾼\"이라는 정체성을 보여주는 디지털 배지, 가디언 굿즈, 성취 등급 등을 통해 소속감과 자부심을 자극해야 한다고 강조함.", analysis: "• \"우리 동네 안심 파수꾼\"이라는 정체성을 보여주는 디지털 배지, 가디언 굿즈, 성취 등급 등 선한 의지에만 기대 할수 없다고 판단함.", pending: "• 보상 체계 개념 및 제원 확보 방안등 선결 필요", status: "Pendding", cost: "a lot of money" },
+      { id: 25, round: "3차(블랙야크 기획자)", item: "3. 정서와 취향을 건드리는'뾰족한 페르소나' 설계", screen: "사용자 앱(App)", opinion: "• 수많은 앱 중에서 유저의 시간을 확보하려면 기능적 완성도를 넘어 '정서와 감성'을 관통하는 뾰족한 페르소나가 필요함. \"진짜 반려인의 마음을 아는 사람들이 만들었다\"는 것이 느껴지는 브랜드 언어와 톤앤매너로 팬덤 커뮤니티를 형성할 것을 제안함.", analysis: "• 지속적인 브랜드 언어와 톤앤매너로 팬덤 커뮤니티를 형성 추진", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 26, round: "3차(블랙야크 기획자)", item: "4. 서비스 경험의3가지 레이어 확장", screen: "사용자 앱(App)", opinion: "• 탄탄한 동네 안심 브랜드로 자리 잡기 위해 다음 3가지 레이어로 다듬을 것을 추천함.\n• 비상 레이어: 실종 발생, 위치 추적, 제보, 보상\n• 일상 레이어: 매일의 산책 인증, 걸어서 넓히는 안심 지도, 명예 배지\n• 커뮤니티/브랜드 레이어: \"연남동 안심 울타리\" 같은 동네 소속감, 브랜드 스토리", analysis: "• 일상 레이어 (보완 추천): 매일의 산책 인증, 걸어서 넓히는 안심 지도, 명예 배지 에 대한 보상체계 정립 후 적용\n• 커뮤니티/브랜드 (신설 추천):", pending: "• 일상 레이어 기능 추가시 보상(토큰 등)체계 정립 필요", status: "Pendding", cost: "a lot of money" },
+      { id: 27, round: "4차(한빛소프트 개발자)", item: "초기 개발 방향 (웹앱 권장)", screen: "사용자 앱(App)", opinion: "• 앱으로 개발하는 것은 좋으나 향후 유지보수가 어려울 수 있으므로, 초기에는 유지보수 효율성을 확보할 수 있는 웹앱(Web App) 형태로 개발하는 것을 권장합니다.", analysis: "• 블루투스(BLE) 연동 및 백그라운드 통신 때문에 웹앱(Web App) 형태로 개발이 불가\n• 네이티브 앱, 하이브리드 및 크로스플랫폼 섞어 개발\n• 크로스플랫폼 (Flutter) 기본으로 하되 네이티브 앱 및 하이브리드 방식 일부 적용\n• 안드/iOS 동시 출시", pending: "• 좌동", status: "Not accepted", cost: "No" },
+      { id: 28, round: "4차(한빛소프트 개발자)", item: "기능 개선 및 개발자 유지 비용", screen: "사용자 앱(App)", opinion: "• 초기 버전을 시장에 출시한 후 사용자 테스터를 거쳐 기능을 지속적으로 개선하는 과정이 필수적이며, 이때 개발 인력을 유지하는 데 생각보다 많은 비용이 소요됩니다.", analysis: "• 8월 말 1차 버젼 이용 사용자 의견 청취 및 전문가 평가 수령 예정", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 29, round: "4차(한빛소프트 개발자)", item: "백엔드 서버(인프라) 확장 부담", screen: "사용자 앱(App)", opinion: "• 서비스 초기에는 체감하기 어려울 수 있으나, 백엔드에서 데이터베이스를 원활하게 지원하기 위해서는 예상보다 훨씬 더 많은 서버 인프라 확장이 필요해질 것입니다.", analysis: "• WEB / WAS : Amazon Aurora Serverless (오로라 서버리스) 적용\n• DB : Amazon RDS Storage Auto Scaling (스토리지 자동 확장) 기능 적용", pending: "• 좌동", status: "Accept", cost: "a lot of money" },
+      { id: 30, round: "4차(한빛소프트 개발자)", item: "초기 무수익 구간(데스밸리) 대비", screen: "사용자 앱(App)", opinion: "• 어떠한 서비스든 런칭 후 1~2년 동안은 실사용자가 적어 수입이 발생하지 않을 수 있습니다. 하지만 이 기간에도 기능 개선을 위한 개발자 인건비와 서버 유지비는 계속 지출되므로 재무적인 대비가 반드시 필요합니다.", analysis: "• 1차버젼 출시 이후 개념 정립,브로셔 및 설명서 제작 투자 유치 진행", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 31, round: "5차(김성구 대표)", item: "브랜드 및 약관", screen: "사용자 앱(App)", opinion: "• '로스트파인드어스'가 앱 상품명인지 회사명인지 명확한 확인 필요\n• 상품명일 경우 각종 약관 제1조의 '회사명' 표기 수정 요청", analysis: "• LostFindUs 는 상품명임\n• 약관 수정", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 32, round: "5차(김성구 대표)", item: "피보호자 등록 세분화", screen: "사용자 앱(App)", opinion: "• 대분류(반려동물, 어르신, 자녀) 및 세부 구분자(개/고양이, 성별, 연령대 옵션) 도입 필요\n• 새 피보호 대상 등록 프로세스 화면이 누락되어 있어 어떤 내용을 등록하는지 확인 필요", analysis: "• 앱은 반려동물 만 고려하기로 기결정\n• 피보호대상 등록 프로세스\n• 피보호대상 명세(사진, 나이등)\n• 안심이(비콘) 연결 등록", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 33, round: "5차(김성구 대표)", item: "실종 목록 검색 필터", screen: "사용자 앱(App)", opinion: "• 거리순 검색 기준(반경 설정, 확대/축소 기능 등) 명확화 필요\n• 사용 편의성을 위해 '시·군·구별' 검색 구분자(필터) 추가 제안", analysis: "• 거리순 검색 기준(반경 설정, 확대/축소 기능 기 반영\n• '시·군·구별' 검색(필터) 기능 중도 요구사항 회수(기능 삭제)하고 반려견에 집중", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 34, round: "5차(김성구 대표)", item: "제보 처리 및 보상 정책", screen: "사용자 앱(App)", opinion: "• 구조 요청자가 접수된 제보를 처리('찾았어요', '검토중', '허위신고')할 수 있는 선택 화면 필요\n• 여러 개의 제보가 들어왔을 때의 채택 방식(선착순 자동 vs 구조요청자 직접 선택) 정책 및 화면 보완 필요\n• 다수 제보 발생 시 보상 분배에 대한 세부 정의 및 안내 가이드 필요", analysis: "• 구조 요청자가 접수된 제보를 처리할 수 있는 선택 화면 적극 반영 필요\n• 여러 개의 제보가 들어왔을 때의 채택 방식 정책 및 화면 보완 필요\n• 구조요청자가 [단계별 확정] 프로세스를 제보한 모든이에게 실시간 전파 알림, 분쟁 요소 사전 제거", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 35, round: "5차(김성구 대표)", item: "결제 수단 및 보상 방식", screen: "사용자 앱(App)", opinion: "• 기존 보상 상품권 선택 리스트 외에 별도로 희망하는 금액을 직접 입력해 결제(카드/현금 결제)하는 프로세스 추가 제안\n• 지급되는 상품권이 실제 상품권인지 가상의 금액인지 명확히 정의할 것", analysis: "• 유저간 직접 현금 수수도 가능(순번 8번 참조)\n• 지급되는 상품권은 상품권 회사와 계약하여 일정 수량 매월 선결재", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 36, round: "5차(김성구 대표)", item: "수익 모델(BM) 고도화", screen: "사용자 앱(App)", opinion: "• 1안: 피보호 대상 등록 자체를 유료화(건당 약 1만 원 수수료 부과)하는 방안 검토\n• 2안: 구조 보상금의 일부를 운영사 수익으로 가져가는 정책 (예: 제보자 70%, 운영사 30% 배분) 및 정산 안내 가이드라인 신설 필요", analysis: "• 2안 체택", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 37, round: "5차(김성구 대표)", item: "실종/제보 관리 UI 통합", screen: "관리자 웹(Admin)", opinion: "• 현재 실종관리와 제보관리가 분리되어 있어 제보 확인 시 매번 실종 ID를 검색해야 하는 불편함 존재\n• '실종관리'를 메인 화면으로 두고, 해당 케이스 하단에 '제보관리'를 팝업으로 연결하는 구조로 개편하여 관리 편의성 증대 제안", analysis: "• 참 좋은 지적임(적극 수용)\n• '실종관리'와 제보관리 한화면에 적용방안 보색", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 38, round: "5차(김성구 대표)", item: "제보 검색 필터 추가", screen: "관리자 웹(Admin)", opinion: "• 제보관리 테이블에 제보 장소 구분자를 명시하고, 상단에 '지역 (도, 시/군/구)' 검색 필터 기능 추가 필요", analysis: "• 적극 수용)", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 39, round: "5차(김성구 대표)", item: "권한 설정 및 회원 관리", screen: "관리자 웹(Admin)", opinion: "• 사용자 역할(Role) 구분이 회원가입 시 설정되는 것인지, 관리자가 임의 부여하는 것인지 정의가 확인되지 않음\n• 설정 방식에 따른 회원 관리 및 보상 정책 수립 필요", analysis: "• 사용자 역할(Role) 구분이 회원가입 시 설정됨\n• 설정 방식\n ◦ 보호자 : 피보호자 안심이 등록, 안심존 설정 등 수행\n ◦ 일반인(시민) : 수집 및 제보 수행", pending: "• 좌동", status: "Accept", cost: "No" },
+      { id: 40, round: "5차(김성구 대표)", item: "운영사 수익 방안 반영", screen: "관리자 웹(Admin)", opinion: "• 보상 관리 메뉴에 운영사의 수익(수수료 등) 창출 방안이 고려 및 반영되어야 함", analysis: "• 보상 관리 메뉴에 수익(수수료 등) 창출 방안 구체화 적용", pending: "• 좌동", status: "Accept", cost: "No" }
+    ];
+
+    const TABS = ["전체", "1차(연구소 자체)", "2차(권혜인 박사)", "3차(블랙야크 기획자)", "4차(한빛소프트 개발자)", "5차(김성구 대표)"];
+
+    let activeTab = "전체";
+    
+    // 로컬스토리지 연동
+    let agreements = JSON.parse(localStorage.getItem('lfu_agreements') || '{}');
+    let opinions = JSON.parse(localStorage.getItem('lfu_opinions') || '{}');
+    let generatedHtmlStr = "";
+
+    window.resetData = function() {
+      if(confirm('작성한 모든 의견과 동의 내역을 초기화하시겠습니까?')) {
+        localStorage.removeItem('lfu_agreements');
+        localStorage.removeItem('lfu_opinions');
+        agreements = {};
+        opinions = {};
+        updateAgreementStats();
+        renderTable();
+      }
+    };
+
+    function updateAgreementStats() {
+      const total = reviewData.length;
+      let agreed = 0, disagreed = 0;
+      for (let i = 1; i <= total; i++) {
+        if (agreements[i] === true) agreed++;
+        else if (agreements[i] === false) disagreed++;
+      }
+      const unchecked = total - agreed - disagreed;
+      document.getElementById('agreement-stats').innerHTML = `
+        <div class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 mr-2"></span>미체크: <strong class="ml-1.5 text-slate-700">${unchecked}</strong></div>
+        <div class="w-px h-4 bg-slate-300 hidden sm:block"></div>
+        <div class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></span>동의: <strong class="ml-1.5 text-blue-700">${agreed}</strong><span class="text-slate-400 text-xs ml-1">/ ${total}</span></div>
+        <div class="w-px h-4 bg-slate-300 hidden sm:block"></div>
+        <div class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2"></span>미동의: <strong class="ml-1.5 text-rose-600">${disagreed}</strong><span class="text-slate-400 text-xs ml-1">/ ${total}</span></div>
+      `;
+    }
+
+    function getStatusBadge(status) {
+      if (status === 'Accept') return `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"><i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> 아이티에스뱅크 수용</span>`;
+      if (status === 'Not accepted') return `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-200 shadow-sm"><i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1"></i> 아이티에스뱅크 미수용</span>`;
+      if (status === 'Pendding') return `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1"></i> 아이티에스뱅크 보류/미결</span>`;
+      return `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">${status}</span>`;
+    }
+
+    function escapeHtml(unsafe) {
+      if (!unsafe) return '';
+      return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function renderTabs() {
+      let html = '';
+      TABS.forEach(tab => {
+        const isActive = activeTab === tab;
+        const count = tab === "전체" ? reviewData.length : reviewData.filter(d => d.round === tab).length;
+        const btnClass = isActive ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50';
+        const badgeClass = isActive ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500';
+        html += `<button onclick="changeTab('${tab}')" class="whitespace-nowrap py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-200 ${btnClass}">${tab} <span class="ml-2 py-0.5 px-2 rounded-full text-xs ${badgeClass}">${count}</span></button>`;
+      });
+      document.getElementById('tab-container').innerHTML = html;
+    }
+
+    window.changeTab = function(tab) { activeTab = tab; renderTabs(); renderTable(); };
+
+    function renderTable() {
+      const filteredData = activeTab === "전체" ? reviewData : reviewData.filter(d => d.round === activeTab);
+      
+      // 틀고정(Sticky) 클래스가 반영된 헤더 렌더링
+      let headerHtml = `<th scope="col" class="px-3 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider sticky-col-1">순번</th>`;
+      
+      if (activeTab === "전체") {
+        headerHtml += `<th scope="col" class="px-3 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider sticky-col-2">차수</th>`;
+        headerHtml += `<th scope="col" class="px-4 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider sticky-col-3 sticky-shadow">항목</th>`;
+      } else {
+        headerHtml += `<th scope="col" class="px-4 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider sticky-col-2-alt sticky-shadow">항목</th>`;
+      }
+
+      headerHtml += `
+        <th scope="col" class="px-4 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px] w-[20%]">검토의견</th>
+        <th scope="col" class="px-4 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px] w-[20%]">분석결과 및 수용내용</th>
+        <th scope="col" class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[140px] w-32">검토의견 수용 여부</th>
+        <th scope="col" class="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-[120px]">검토자 동의</th>
+        <th scope="col" class="px-4 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[240px] w-[25%]">추가 검토의견 작성</th>
+      `;
+      document.getElementById('table-header').innerHTML = headerHtml;
+
+      if (filteredData.length === 0) {
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="${activeTab === '전체' ? 8 : 7}" class="px-6 py-16 text-center text-slate-500 font-medium">해당 차수에 등록된 검토 의견이 없습니다.</td></tr>`;
+      } else {
+        let bodyHtml = '';
+        filteredData.forEach(item => {
+          // 틀고정(Sticky) 클래스가 반영된 본문 렌더링
+          let roundHtml = activeTab === "전체" ? `<td class="px-3 py-4 text-sm font-semibold text-blue-900 sticky-col-2" style="white-space: normal;">${item.round.split('(')[0]}<span class="block text-xs text-slate-500 font-normal mt-0.5">(${item.round.split('(')[1]}</span></td>` : '';
+          let itemStickyClass = activeTab === "전체" ? "sticky-col-3 sticky-shadow" : "sticky-col-2-alt sticky-shadow";
+          
+          let selectColorClass = 'text-slate-500 bg-slate-50 border-slate-200';
+          if (agreements[item.id] === true) selectColorClass = 'text-blue-600 bg-blue-50 border-blue-300';
+          else if (agreements[item.id] === false) selectColorClass = 'text-rose-600 bg-rose-50 border-rose-300';
+
+          bodyHtml += `
+            <tr class="hover-tr transition-colors border-b border-slate-100">
+              <td class="px-3 py-4 text-sm font-medium text-slate-400 text-center sticky-col-1">${item.id}</td>
+              ${roundHtml}
+              <td class="px-4 py-4 text-sm font-bold text-slate-800 leading-tight ${itemStickyClass}" style="white-space: normal; word-break: keep-all;">
+                ${item.item}
+                <div class="mt-1 text-xs font-mono text-slate-400 bg-slate-50 rounded px-1 py-0.5 inline-block break-all">${item.screen}</div>
+              </td>
+              <td class="px-4 py-4 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed min-w-[200px]">${item.opinion}</td>
+              <td class="px-4 py-4 text-sm text-blue-900 whitespace-pre-wrap leading-relaxed bg-blue-50/10 min-w-[200px]">${item.analysis}</td>
+              <td class="px-4 py-4 text-center align-top pt-5 min-w-[140px]">${getStatusBadge(item.status)}</td>
+              <td class="px-4 py-4 align-top pt-5 min-w-[120px]">
+                <select data-id="${item.id}" class="select-agree w-full text-xs font-bold rounded py-1.5 px-2 outline-none transition-colors border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${selectColorClass}">
+                  <option value="" ${agreements[item.id] === undefined ? 'selected' : ''}>미체크</option>
+                  <option value="true" ${agreements[item.id] === true ? 'selected' : ''}>동의</option>
+                  <option value="false" ${agreements[item.id] === false ? 'selected' : ''}>미동의</option>
+                </select>
+              </td>
+              <td class="px-4 py-4 align-top min-w-[240px]">
+                <textarea data-id="${item.id}" placeholder="이 항목에 대한 추가 의견이나 피드백을 자유롭게 남겨주세요." class="input-opinion w-full h-24 p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none bg-slate-50 focus:bg-white transition-colors">${opinions[item.id] || ''}</textarea>
+              </td>
+            </tr>
+          `;
+        });
+        document.getElementById('table-body').innerHTML = bodyHtml;
+      }
+      lucide.createIcons();
+    }
+
+    document.getElementById('table-body').addEventListener('change', function(e) {
+      if (e.target.classList.contains('select-agree')) {
+        const id = parseInt(e.target.getAttribute('data-id'));
+        const val = e.target.value;
+
+        if (val === 'true') agreements[id] = true;
+        else if (val === 'false') agreements[id] = false;
+        else delete agreements[id];
+        
+        localStorage.setItem('lfu_agreements', JSON.stringify(agreements));
+        
+        if (agreements[id] === true) {
+          e.target.className = "select-agree w-full text-xs font-bold rounded py-1.5 px-2 outline-none transition-colors border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-blue-600 bg-blue-50 border-blue-300";
+        } else if (agreements[id] === false) {
+          e.target.className = "select-agree w-full text-xs font-bold rounded py-1.5 px-2 outline-none transition-colors border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-rose-600 bg-rose-50 border-rose-300";
+        } else {
+          e.target.className = "select-agree w-full text-xs font-bold rounded py-1.5 px-2 outline-none transition-colors border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-500 bg-slate-50 border-slate-200";
+        }
+
+        updateAgreementStats();
+      }
+    });
+
+    document.getElementById('table-body').addEventListener('input', function(e) {
+      if (e.target.classList.contains('input-opinion')) {
+        const id = parseInt(e.target.getAttribute('data-id'));
+        opinions[id] = e.target.value;
+        localStorage.setItem('lfu_opinions', JSON.stringify(opinions));
+      }
+    });
+
+    function generateReportHtml() {
+      const total = reviewData.length;
+      const accept = reviewData.filter(d => d.status === 'Accept').length;
+      const reject = reviewData.filter(d => d.status === 'Not accepted').length;
+      const pending = reviewData.filter(d => d.status === 'Pendding').length;
+      const agreedCount = Object.values(agreements).filter(v => v === true).length;
+      const opinionCount = Object.keys(opinions).filter(k => opinions[k] && opinions[k].trim() !== '').length;
+
+      let rowsHtml = reviewData.map(item => {
+        let agreeLabel = '미체크', agreeClass = 'not-checked';
+        if (agreements[item.id] === true) { agreeLabel = '동의'; agreeClass = 'is-agree'; } 
+        else if (agreements[item.id] === false) { agreeLabel = '미동의'; agreeClass = 'not-agree'; }
+
+        return `
+          <tr>
+            <td align="center">${item.id}</td>
+            <td align="center">${item.round}</td>
+            <td><strong>${item.item}</strong><br/><span style="font-size:12px;color:#64748b;">${item.screen}</span></td>
+            <td class="opinion-text">${escapeHtml(item.opinion)}</td>
+            <td class="opinion-text" style="background-color: #f8fafc; color: #1e3a8a;">${escapeHtml(item.analysis)}</td>
+            <td align="center">
+              ${item.status === 'Accept' ? '<span class="status-badge accept">아이티에스뱅크 수용</span>' : 
+                item.status === 'Not accepted' ? '<span class="status-badge reject">아이티에스뱅크 미수용</span>' : 
+                '<span class="status-badge pending">아이티에스뱅크 보류/미결</span>'}
+            </td>
+            <td align="center">
+              <span class="agree-badge ${agreeClass}">${agreeLabel}</span>
+            </td>
+            <td class="opinion-text" style="background-color: #fffbeb;">${escapeHtml(opinions[item.id] || '-')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      return `
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>LostFindUs 검토의견 종합 결과 리포트</title>
+          <style>
+            body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; padding: 30px; color: #334155; background-color: #f1f5f9; margin: 0; }
+            .container { max-width: 1400px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+            
+            .header-sec { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+            h1 { color: #0f172a; margin: 0; font-size: 26px; }
+            .meta-info { font-size: 14px; color: #64748b; }
+            
+            .action-btn { padding: 8px 16px; background: #334155; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+            .action-btn:hover { background: #1e293b; }
+            
+            .stat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 40px; }
+            .stat-card { background: #f8fafc; padding: 20px 15px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
+            .stat-title { font-size: 13px; color: #64748b; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
+            .stat-value { font-size: 28px; font-weight: 800; }
+            .val-total { color: #0f172a; } .val-accept { color: #16a34a; } .val-reject { color: #dc2626; } 
+            .val-pending { color: #d97706; } .val-agree { color: #2563eb; } .val-opinion { color: #9333ea; }
+            
+            .section-title { font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 15px; }
+
+            table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+            th, td { border: 1px solid #cbd5e1; padding: 12px 14px; text-align: left; vertical-align: top; word-wrap: break-word; }
+            th { background-color: #f1f5f9; color: #475569; font-weight: 700; text-align: center; }
+            
+            .status-badge { font-weight: bold; font-size: 12px; }
+            .status-badge.accept { color: #16a34a; } .status-badge.reject { color: #dc2626; } .status-badge.pending { color: #d97706; }
+
+            .agree-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; white-space: nowrap; }
+            .is-agree { background-color: #dcfce7; color: #166534; }
+            .not-agree { background-color: #fee2e2; color: #991b1b; }
+            .not-checked { background-color: #e2e8f0; color: #475569; }
+            
+            .opinion-text { white-space: pre-wrap; line-height: 1.6; color: #334155; }
+
+            @media print {
+              body { background-color: white; padding: 0; }
+              .container { box-shadow: none; max-width: 100%; padding: 0; }
+              .no-print { display: none !important; }
+              @page { size: landscape; margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header-sec">
+              <div>
+                <h1>LostFindUs 디자인 검토 종합 현황 리포트</h1>
+                <div class="meta-info" style="margin-top: 8px;">출력 일시: ${new Date().toLocaleString('ko-KR')}</div>
+              </div>
+              <button onclick="window.print()" class="action-btn no-print">보고서 인쇄 (PDF 저장)</button>
+            </div>
+
+            <div class="stat-grid">
+              <div class="stat-card"><div class="stat-title">전체 검토 항목</div><div class="stat-value val-total">${total}건</div></div>
+              <div class="stat-card"><div class="stat-title">아이티에스뱅크 수용</div><div class="stat-value val-accept">${accept}건</div></div>
+              <div class="stat-card"><div class="stat-title">아이티에스뱅크 미수용</div><div class="stat-value val-reject">${reject}건</div></div>
+              <div class="stat-card"><div class="stat-title">아이티에스뱅크 보류/미결</div><div class="stat-value val-pending">${pending}건</div></div>
+              <div class="stat-card" style="background:#eff6ff; border-color:#bfdbfe;"><div class="stat-title" style="color:#1d4ed8;">나의 동의 완료</div><div class="stat-value val-agree">${agreedCount}건</div></div>
+              <div class="stat-card" style="background:#faf5ff; border-color:#e9d5ff;"><div class="stat-title" style="color:#7e22ce;">나의 추가 의견</div><div class="stat-value val-opinion">${opinionCount}건</div></div>
+            </div>
+
+            <div class="section-title">세부 항목별 수용/동의/의견 전체 내역</div>
+            <table>
+              <thead>
+                <tr>
+                  <th width="4%">순번</th>
+                  <th width="8%">차수</th>
+                  <th width="12%">항목 / 화면</th>
+                  <th width="23%">원래 검토의견</th>
+                  <th width="23%">분석결과 및 수용내용</th>
+                  <th width="10%">검토의견 수용 여부</th>
+                  <th width="6%">나의 동의</th>
+                  <th width="14%">추가 의견 (작성내용)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+
+    window.openModal = function() {
+      const html = generateReportHtml();
+      generatedHtmlStr = html;
+      document.getElementById('report-iframe').srcdoc = html;
+      const modal = document.getElementById('report-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.closeModal = function() {
+      const modal = document.getElementById('report-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    window.downloadHtml = function() {
+      const blob = new Blob([generatedHtmlStr], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `LostFindUs_검토의견_종합현황_${new Date().getTime()}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    };
+
+    window.shareKakao = function() {
+      alert("카카오톡 공유 기능이 호출되었습니다.\n(실제 환경에서는 카카오 SDK 연동이 필요합니다.)\n\n취합된 전체 현황이 공유됩니다.");
+    };
+
+    window.openManualModal = function() {
+      const modal = document.getElementById('manual-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.closeManualModal = function() {
+      const modal = document.getElementById('manual-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    // 초기화
+    updateAgreementStats();
+    renderTabs();
+    renderTable();
+
+  </script>
+</body>
+</html>

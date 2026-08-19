@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>아이티에스뱅크 - 개인위치정보사업 등록 보완사항 관리 시스템</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 11pt;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .print-table th, .print-table td {
+        border: 1px solid #333 !important;
+        padding: 6px 8px;
+        font-size: 10pt;
+      }
+      .print-table th {
+        background-color: #f1f5f9 !important;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- 상단 헤더 -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 no-print shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xl text-white shadow">
+          ITS
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            (주)아이티에스뱅크
+            <span class="text-xs font-normal px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              '26년 제2차 개인위치정보사업 등록
+            </span>
+          </h1>
+          <p class="text-xs text-slate-400">방송미디어통신위원회 적정성 검토 보완사항 관리 시스템 [붙임4 양식 연동]</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-3 text-xs">
+        <div class="bg-slate-800 px-3 py-1.5 rounded border border-slate-700 text-right">
+          <span class="text-slate-400 block">제출 마감기한</span>
+          <span class="text-amber-400 font-semibold text-sm">2026. 08. 07.</span>
+        </div>
+        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-lg font-medium flex items-center gap-1.5 transition shadow">
+          <i class="fa-solid fa-print"></i> [붙임4] 인쇄/PDF 저장
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 컨테이너 -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full no-print">
+
+    <!-- 대시보드 요약 카드 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">전체 검토 항목</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1" id="stat-total">9건</p>
+          <p class="text-xs text-slate-400 mt-1">필수 3건 + 권고 6건</p>
+        </div>
+        <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center text-xl">
+          <i class="fa-solid fa-list-check"></i>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-red-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-red-600">필수 보완 필요사항</p>
+          <p class="text-2xl font-bold text-red-600 mt-1" id="stat-required">3건</p>
+          <p class="text-xs text-red-400 mt-1">미조치 시 등록 불가</p>
+        </div>
+        <div class="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center text-xl">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-amber-600">개선 권고 사항</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1" id="stat-recommended">6건</p>
+          <p class="text-xs text-amber-500 mt-1">품질 및 보안 강화 권고</p>
+        </div>
+        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center text-xl">
+          <i class="fa-solid fa-lightbulb"></i>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-blue-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-blue-600">작성 완료율</p>
+          <p class="text-2xl font-bold text-blue-600 mt-1" id="stat-progress">100%</p>
+          <div class="w-28 bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
+            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 100%"></div>
+          </div>
+        </div>
+        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl">
+          <i class="fa-solid fa-chart-pie"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 필터 및 검색 툴바 -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
+      <!-- 탭 필터 -->
+      <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg">
+        <button onclick="setTab('all')" id="tab-all" class="px-4 py-2 text-xs font-semibold rounded-md transition shadow-sm bg-white text-slate-800">
+          전체 보기 (9)
+        </button>
+        <button onclick="setTab('required')" id="tab-required" class="px-4 py-2 text-xs font-medium rounded-md text-slate-600 hover:text-red-600 transition flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-red-500"></span> 필수 보완 필요사항 (3)
+        </button>
+        <button onclick="setTab('recommended')" id="tab-recommended" class="px-4 py-2 text-xs font-medium rounded-md text-slate-600 hover:text-amber-600 transition flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span> 개선 권고 사항 (6)
+        </button>
+      </div>
+
+      <!-- 검색 및 버튼 -->
+      <div class="flex items-center space-x-2 flex-1 md:flex-none">
+        <div class="relative flex-1 md:w-64">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" id="searchInput" oninput="renderTable()" placeholder="항목명, 키워드 검색..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <button onclick="exportCSV()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition border border-slate-300 flex items-center gap-1">
+          <i class="fa-solid fa-file-csv"></i> CSV 다운로드
+        </button>
+        
+        <button onclick="copyAllText()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition border border-slate-300 flex items-center gap-1">
+          <i class="fa-regular fa-copy"></i> 전체 복사
+        </button>
+
+        <button onclick="resetData()" class="px-3 py-2 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-xs font-medium rounded-lg transition border border-slate-300" title="초기 데이터 복원">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 메인 양식 대화형 데이터 테이블 -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-file-contract text-blue-600"></i>
+          <h2 class="font-bold text-sm text-slate-800">[붙임 4] 개인위치정보사업 등록 적정성 재검토 관련 보완사항 작성 현황</h2>
+        </div>
+        <span class="text-xs text-slate-500">※ 셀 클릭 시 사업계획서 보완 위치 및 요약 내용을 수정할 수 있습니다.</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-100/80 text-slate-700 text-xs font-bold border-b border-slate-200">
+              <th class="p-3 w-16 text-center">구분</th>
+              <th class="p-3 w-48">보완 필요 항목</th>
+              <th class="p-3 min-w-[280px]">보완 필요사항 / 개선 권고사항 내용</th>
+              <th class="p-3 w-56">사업계획서 보완 사항</th>
+              <th class="p-3 min-w-[280px]">보완 사항 요약</th>
+              <th class="p-3 w-24 text-center">상태</th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="divide-y divide-slate-200 text-xs">
+            <!-- Dynamic Rows rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 안내 사항 가이드 -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-900 leading-relaxed mb-8 flex gap-3">
+      <i class="fa-solid fa-circle-info text-blue-600 text-base mt-0.5"></i>
+      <div>
+        <span class="font-bold">사업계획서 제출 안내 (방송미디어통신위원회)</span>
+        <ul class="list-disc list-inside mt-1 space-y-0.5 text-blue-800">
+          <li><b>제출 기한:</b> 2026년 8월 7일까지 (전자민원센터 업로드)</li>
+          <li><b>제출 서류:</b> 사업계획서 최종본 (본 보완사항표를 별첨/사업계획서 전면에 수록)</li>
+          <li><b>문의처:</b> 위치정보지원센터 (www.lbsc.kr / 02-588-0185)</li>
+        </ul>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 인쇄 전용 [붙임 4] 양식 출력 레이아웃 (Print-Only) -->
+  <div class="hidden print-only p-8">
+    <div class="text-center mb-6">
+      <h1 class="text-xl font-bold underline mb-1">개인위치정보사업 등록 적정성 재검토 관련 보완사항 표시 양식</h1>
+      <p class="text-xs text-gray-600">신청법인명: (주)아이티에스뱅크 | 제출일자: 2026년 8월 7일</p>
+    </div>
+
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th style="width: 22%;">보완 필요 항목</th>
+          <th style="width: 32%;">보완 필요사항 (또는 개선 권고사항)</th>
+          <th style="width: 18%;">사업계획서 보완 사항</th>
+          <th style="width: 28%;">보완 사항 요약</th>
+        </tr>
+      </thead>
+      <tbody id="print-table-body">
+        <!-- Print rows rendered by JS -->
+      </tbody>
+    </table>
+
+    <div class="mt-8 text-right text-xs">
+      <p>위와 같이 개인위치정보사업 등록 적정성 검토 보완사항을 작성하여 제출합니다.</p>
+      <p class="mt-4 font-bold text-sm">2026년 8월 7일</p>
+      <p class="mt-2 text-sm font-bold">주식회사 아이티에스뱅크 대표이사 이 종 선 (인)</p>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-4 border-t border-slate-800 no-print mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+      <p>© 2026 (주)아이티에스뱅크 ITS Bank Co., Ltd. All Rights Reserved.</p>
+      <p class="text-slate-500">LostFindUs 위치기반서비스 플랫폼 보안관제</p>
+    </div>
+  </footer>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200 mb-4">
+        <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-blue-600"></i>
+          보완사항 세부내용 편집
+        </h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="editForm" onsubmit="saveItem(event)">
+        <input type="hidden" id="edit-id">
+        
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">보완 필요 항목</label>
+          <input type="text" id="edit-category" readonly class="w-full p-2 text-xs bg-slate-100 border border-slate-300 rounded text-slate-700 font-bold">
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">보완 필요사항 / 개선 권고사항 내용 (방통위/KISA 통보내용)</label>
+          <textarea id="edit-original" readonly rows="4" class="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded text-slate-600 leading-relaxed"></textarea>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">사업계획서 보완 사항 <span class="text-red-500">*</span> (예: p.15 3. 시스템 구성)</label>
+          <input type="text" id="edit-location" required class="w-full p-2 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">보완 사항 요약 <span class="text-red-500">*</span></label>
+          <textarea id="edit-summary" required rows="4" class="w-full p-2 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none leading-relaxed"></textarea>
+        </div>
+
+        <div class="mb-5">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">진행 상태</label>
+          <select id="edit-status" class="w-full p-2 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-blue-500">
+            <option value="보완완료">보완완료 (Complete)</option>
+            <option value="작성중">작성중 (In Progress)</option>
+            <option value="검토대기">검토대기 (Pending)</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-3 border-t border-slate-200">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg">취소</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg shadow">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 초기 보완 데이터 세트 (방통위 및 KISA 공식 보완요청서 및 권고사항 완벽 반영)
+    const defaultData = [
+      {
+        id: 1,
+        type: "required", // 필수 보완 필요사항
+        typeLabel: "필수",
+        category: "[평가항목 2-가] 위치정보 시스템의 주요 설비 내역",
+        original: "신청기관은 위치정보를 수집·처리·저장하는 위치정보시스템의 전체 구성도, 네트워크 구성도, 보안시스템 배치 현황, 관리용 PC 접속 현황 등이 미흡함. 또한 위치정보가 저장되는 AWS 클라우드 환경에 대한 구성 방식, 저장 형식, 주요 사양, 운영체제(OS), 네트워크 구성 등에 대해 배치 개요, 서버 구성도(사양, 대수 등), 네트워크 구성도, 정보보안시스템 배치 현황, 관리용 PC 접속 현황 등을 구체적으로 제시할 필요가 있음.",
+        location: "사업계획서 p.12~p.18 [3. 시스템의 구성(물적설비) - 가. 주요 설비 내역 및 구성도]",
+        summary: "AWS Lightsail 클라우드 인프라 기반 위치정보시스템의 서버 사양(WEB/WAS: vCPU 2, RAM 4GB, Ubuntu 22.04 LTS / DB: PostgreSQL 13.20, 40GB SSD), 전체 시스템 구성도, L3/L4 Security Group 포함 네트워크 구성도, 정보보안시스템(ClamAV 백신, 침입차단/탐지) 배치 현황 및 관리자 전용 PC의 고정 IP(White-list) 접속 통제 현황을 구체적으로 도식화하여 수록함.",
+        status: "보완완료"
+      },
+      {
+        id: 2,
+        type: "required",
+        typeLabel: "필수",
+        category: "[평가항목 3-가-2] 각 단계별 접근 권한자 지정 및 권한 제한 방안",
+        original: "위치정보시스템에 대한 접근권한을 수집ㆍ이용ㆍ제공ㆍ파기 등 업무 단계별로 구분하여 필요한 최소한의 인원에게만 부여하여야 하므로, 각 처리단계별로 위치정보취급자가 접근권한을 가지는 범위를 보다 명확히 할 필요가 있음 (조직도상 오세준 취급자 역할 명확화 포함).",
+        location: "사업계획서 p.28~p.30 [4. 위치정보의 보호조치 계획 - 가. 관리적 보호조치 - 2) 단계별 접근 권한자 지정]",
+        summary: "위치정보 관리책임자(대표이사), 위치정보 관리자, 위치정보 취급자로 3단계 권한 구조를 수립하고, 위치정보 수집/이용/제공/파기 각 업무 단계별 접근권한 제어 매트릭스(RBAC)를 명확히 정의함. 조직도상 인력별(오세준 등) 전담 직무와 접근 범위를 최소 권한 원칙에 따라 정비 및 명시함.",
+        status: "보완완료"
+      },
+      {
+        id: 3,
+        type: "required",
+        typeLabel: "필수",
+        category: "[평가항목 3-가-4] 취급 대장의 운영·관리 계획",
+        original: "위치정보 제공사실 등을 기록한 취급대장의 운영·관리 계획에 '위치정보 수집사실 확인자료' 관련 항목이 누락되어 있음. 또한 위치정보 이용·제공사실 확인자료의 혼재를 해결하고, 수집요청인, 수집일시, 수집방법 등 수집사실 확인자료와 제공받는자, 취득경로, 이용·제공일시 등 이용·제공사실 확인자료를 각각 구체화하며 열람·정정 절차의 기술적 조치 내용을 명시할 필요가 있음.",
+        location: "사업계획서 p.32~p.35 [4. 위치정보의 보호조치 계획 - 가. 관리적 보호조치 - 4) 취급대장의 운영·관리 계획]",
+        summary: "위치정보법 제16조 규정에 따라 '위치정보 수집사실 확인자료'(수집요청인, 수집일시, 수집방법)와 '위치정보 이용·제공사실 확인자료'(제공받는자, 취득경로, 이용·제공일시, 이용·제공방법)를 분리하여 전자적 로그 DB(PostgreSQL)에 기록·보존(5년)하는 구현 체계 및 구현 화면을 수록함. 개인위치정보주체의 열람·정정 요구 시 대응할 수 있는 시스템 구현 화면 및 기술적 절차를 보완 완료함.",
+        status: "보완완료"
+      },
+      {
+        id: 4,
+        type: "recommended", // 개선 권고사항
+        typeLabel: "권고",
+        category: "[평가항목 2-가] 위치정보 시스템의 주요 설비 내역",
+        original: "위치정보시스템의 전체 구성을 제시하고 있으나, 네트워크 구성도 및 관리용 PC의 접속 방법 등 보완을 권고함.",
+        location: "사업계획서 p.15 [3. 시스템의 구성 - 가. 주요 설비 내역 - 네트워크 및 관리접속]",
+        summary: "관리용 PC 접속 시 사전에 허용된 특정 고정 IP 주소(White-list)에서만 관리 포트(SSH, HTTPS) 접근이 가능하도록 AWS Security Group 방화벽 정책을 구성하고, Bastion Host 및 2차 인증(TOTP)을 경유하도록 통제하는 관리용 PC 접속 상세 구성도를 추가함.",
+        status: "보완완료"
+      },
+      {
+        id: 5,
+        type: "recommended",
+        typeLabel: "권고",
+        category: "[평가항목 2-나] 위치정보 시스템 운영체계의 적정성",
+        original: "GPS, BLE, AWS, 이동통신 기술 등을 기반으로 한 위치정보시스템 운영체계를 WAS 서버, DB, 방화벽, 네트워크 등을 포함해서 구체적으로 제시할 필요가 있음.",
+        location: "사업계획서 p.19~p.22 [3. 시스템의 구성 - 나. 위치정보시스템 운영체계의 적정성]",
+        summary: "안심이 비콘(BLE 6.0 AoA) → 고정형/이동형 수집기(FSH/MSH) → LTE/5G 망 → AWS WAS 서버(Track-FOM 위치 연산) → PostgreSQL DB(AES-256 저장암호화)로 연계되는 전 구간 시스템 운영 프로세스 및 방화벽/네트워크 연동 체계를 상세 도식화하여 수록함.",
+        status: "보완완료"
+      },
+      {
+        id: 6,
+        type: "recommended",
+        typeLabel: "권고",
+        category: "[평가항목 3-가-1] 위치정보 관리책임자의 지정",
+        original: "책임자가 될 수 있는 자, 지정 또는 재지정에 관한 절차에 관한 사항들을 보완하면 보다 바람직할 것으로 생각됨.",
+        location: "사업계획서 p.26 [4. 보호조치 계획 - 가. 관리적 보호조치 - 1) 관리책임자 지정]",
+        summary: "위치정보 관리책임자의 자격 요건(임원급 이상, CISO/CPO 준하는 정보보호 경력자), 지정 절차, 유고 시 재지정 절차(14일 이내 재지정 및 방송미디어통신위원회 변경 신고 프로세스)를 내부 위치정보 보호지침에 명문화함.",
+        status: "보완완료"
+      },
+      {
+        id: 7,
+        type: "recommended",
+        typeLabel: "권고",
+        category: "[평가항목 3-가-2] 접근 권한자 지정 및 권한 제한 방안",
+        original: "책임자, 관리자, 취급자의 각각의 수집/이용/제공/파기 단계별 접근 권한 범위를 명확히 제시 권고.",
+        location: "사업계획서 p.29 [4. 보호조치 계획 - 가. 관리적 보호조치 - 2) 단계별 권한자 세부 매트릭스]",
+        summary: "책임자(전체 통제 및 파기 최종 승인), 관리자(시스템 운영/감사로그 확인), 취급자(고객 응대 및 열람/정정 처리) 역할별 시스템 화면 접속 및 데이터 CRUD 세부 권한 제어 매트릭스를 구성 수록함.",
+        status: "보완완료"
+      },
+      {
+        id: 8,
+        type: "recommended",
+        typeLabel: "권고",
+        category: "[평가항목 3-나-1] 식별 인증 및 절차",
+        original: "위치정보시스템 접근권한 확인을 위해 사용자 ID/PW 인증 방안만을 제시하고 있어, 추가적으로 안전한 시스템 보호를 위한 강화된 사용자 인증 적용을 권고함.",
+        location: "사업계획서 p.36 [4. 보호조치 계획 - 나. 기술적 보호조치 - 1) 식별 및 인증 절차]",
+        summary: "관리자 페이지 접근 시 ID/PW 인증 외에 모바일 TOTP(Time-based One-Time Password) 기반 2차 인증(MFA)을 필수 적용하고, 비밀번호 5회 오류 시 즉시 계정 잠금 처리되는 보안 강화 조치를 탑재함.",
+        status: "보완완료"
+      },
+      {
+        id: 9,
+        type: "recommended",
+        typeLabel: "권고",
+        category: "[평가항목 3-나-4] 보안프로그램 설치 및 운영 계획",
+        original: "정기적인 보안프로그램 패치 및 업데이트를 하는 운영 계획을 제시할 필요가 있음.",
+        location: "사업계획서 p.40 [4. 보호조치 계획 - 나. 기술적 보호조치 - 4) 보안프로그램 운영 계획]",
+        summary: "매월 첫째 주 화요일을 '보안 점검의 날'로 지정하여 Ubuntu OS 보안 커널 패치 및 PostgreSQL DB 패치를 정기 시행하며, 서버용 백신(ClamAV) 실시간 감시 및 KISA 보안 공지 기반 제로데이 긴급 패치 모니터링 프로세스를 명시함.",
+        status: "보완완료"
+      }
+    ];
+
+    let itemsData = [];
+    let currentTab = 'all';
+
+    // 로컬스토리지 또는 기본 데이터 로드
+    function initData() {
+      const stored = localStorage.getItem('itsbank_compliance_data_2026');
+      if (stored) {
+        try {
+          itemsData = JSON.parse(stored);
+        } catch (e) {
+          itemsData = [...defaultData];
+        }
+      } else {
+        itemsData = [...defaultData];
+      }
+      updateStats();
+      renderTable();
+    }
+
+    function saveData() {
+      localStorage.setItem('itsbank_compliance_data_2026', JSON.stringify(itemsData));
+      updateStats();
+      renderTable();
+    }
+
+    function resetData() {
+      if (confirm('초기 방송미디어통신위원회 보완사항 데이터로 복원하시겠습니까?')) {
+        itemsData = [...defaultData];
+        saveData();
+      }
+    }
+
+    function updateStats() {
+      const total = itemsData.length;
+      const required = itemsData.filter(i => i.type === 'required').length;
+      const recommended = itemsData.filter(i => i.type === 'recommended').length;
+      const completed = itemsData.filter(i => i.status === '보완완료').length;
+      const percentage = Math.round((completed / total) * 100);
+
+      document.getElementById('stat-total').innerText = `${total}건`;
+      document.getElementById('stat-required').innerText = `${required}건`;
+      document.getElementById('stat-recommended').innerText = `${recommended}건`;
+      document.getElementById('stat-progress').innerText = `${percentage}%`;
+      document.getElementById('progress-bar').style.width = `${percentage}%`;
+    }
+
+    function setTab(tab) {
+      currentTab = tab;
+      
+      // 탭 스타일 변경
+      ['all', 'required', 'recommended'].forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tab) {
+          btn.className = "px-4 py-2 text-xs font-semibold rounded-md transition shadow-sm bg-white text-slate-800";
+        } else {
+          btn.className = "px-4 py-2 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+        }
+      });
+
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('table-body');
+      const printTbody = document.getElementById('print-table-body');
+      const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
+
+      tbody.innerHTML = '';
+      printTbody.innerHTML = '';
+
+      const filtered = itemsData.filter(item => {
+        if (currentTab === 'required' && item.type !== 'required') return false;
+        if (currentTab === 'recommended' && item.type !== 'recommended') return false;
+
+        if (searchKeyword) {
+          return item.category.toLowerCase().includes(searchKeyword) ||
+                 item.original.toLowerCase().includes(searchKeyword) ||
+                 item.location.toLowerCase().includes(searchKeyword) ||
+                 item.summary.toLowerCase().includes(searchKeyword);
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">검색 조건에 해당하는 보완 항목이 없습니다.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        // 웹 대시보드 테이블 행
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-200 cursor-pointer";
+        tr.onclick = () => openModal(item.id);
+
+        const typeBadge = item.type === 'required' 
+          ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">필수</span>`
+          : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">권고</span>`;
+
+        let statusBadge = '';
+        if (item.status === '보완완료') {
+          statusBadge = `<span class="px-2 py-1 rounded text-[11px] font-medium bg-emerald-100 text-emerald-700 flex items-center justify-center gap-1"><i class="fa-solid fa-check"></i> 완료</span>`;
+        } else if (item.status === '작성중') {
+          statusBadge = `<span class="px-2 py-1 rounded text-[11px] font-medium bg-blue-100 text-blue-700 flex items-center justify-center gap-1"><i class="fa-solid fa-pen"></i> 작성중</span>`;
+        } else {
+          statusBadge = `<span class="px-2 py-1 rounded text-[11px] font-medium bg-slate-100 text-slate-600 flex items-center justify-center gap-1">대기</span>`;
+        }
+
+        tr.innerHTML = `
+          <td class="p-3 text-center">${typeBadge}</td>
+          <td class="p-3 font-semibold text-slate-900">${item.category}</td>
+          <td class="p-3 text-slate-600 leading-relaxed">${item.original}</td>
+          <td class="p-3 text-blue-700 font-medium">${item.location}</td>
+          <td class="p-3 text-slate-800 leading-relaxed">${item.summary}</td>
+          <td class="p-3 text-center">${statusBadge}</td>
+        `;
+        tbody.appendChild(tr);
+
+        // 인쇄용 양식 테이블 행 ([붙임4] 양식 포맷)
+        const printTr = document.createElement('tr');
+        printTr.innerHTML = `
+          <td style="font-weight: bold;">
+            ${item.type === 'required' ? '[필수]' : '[권고]'} ${item.category}
+          </td>
+          <td style="text-align: justify;">${item.original}</td>
+          <td style="font-weight: 500; color: #1d4ed8;">${item.location}</td>
+          <td style="text-align: justify;">${item.summary}</td>
+        `;
+        printTbody.appendChild(printTr);
+      });
+    }
+
+    // 모달 제어
+    function openModal(id) {
+      const item = itemsData.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('edit-id').value = item.id;
+      document.getElementById('edit-category').value = `[${item.typeLabel}] ${item.category}`;
+      document.getElementById('edit-original').value = item.original;
+      document.getElementById('edit-location').value = item.location;
+      document.getElementById('edit-summary').value = item.summary;
+      document.getElementById('edit-status').value = item.status;
+
+      document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('editModal').classList.add('hidden');
+    }
+
+    function saveItem(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById('edit-id').value);
+      const item = itemsData.find(i => i.id === id);
+      
+      if (item) {
+        item.location = document.getElementById('edit-location').value;
+        item.summary = document.getElementById('edit-summary').value;
+        item.status = document.getElementById('edit-status').value;
+        saveData();
+      }
+      closeModal();
+    }
+
+    // CSV 다운로드
+    function exportCSV() {
+      let csvContent = "\uFEFF"; // UTF-8 BOM
+      csvContent += "구분,보완 필요 항목,보완 필요사항(개선권고),사업계획서 보완 사항,보완 사항 요약,상태\n";
+
+      itemsData.forEach(item => {
+        const row = [
+          `"${item.typeLabel}"`,
+          `"${item.category.replace(/"/g, '""')}"`,
+          `"${item.original.replace(/"/g, '""')}"`,
+          `"${item.location.replace(/"/g, '""')}"`,
+          `"${item.summary.replace(/"/g, '""')}"`,
+          `"${item.status}"`
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `ITSBank_개인위치정보사업_보완사항_양식4_20260807.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 전체 클립보드 복사
+    function copyAllText() {
+      let text = "[붙임4] 개인위치정보사업 등록 적정성 재검토 관련 보완사항 표시 양식\n";
+      text += "신청기관: (주)아이티에스뱅크\n\n";
+
+      itemsData.forEach((item, index) => {
+        text += `${index + 1}. 보완 필요 항목: [${item.typeLabel}] ${item.category}\n`;
+        text += `   - 통보 내용: ${item.original}\n`;
+        text += `   - 사업계획서 보완 위치: ${item.location}\n`;
+        text += `   - 보완 사항 요약: ${item.summary}\n\n`;
+      });
+
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+
+      alert("클립보드에 전체 보완사항 양식이 복사되었습니다. 사업계획서 문서나 메일에 붙여넣기 하실 수 있습니다.");
+    }
+
+    // 초기화 실행
+    window.onload = function() {
+      initData();
+    };
+  </script>
+</body>
+</html>

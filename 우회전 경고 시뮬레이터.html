@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>우회전 사고방지 보행안전지원 시스템 - 송파구청 & 아이티에스뱅크</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes frameShake {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-4px, 3px) rotate(-1deg); }
+      40% { transform: translate(4px, -3px) rotate(1deg); }
+      60% { transform: translate(-3px, -2px) rotate(-0.5deg); }
+      80% { transform: translate(3px, 2px) rotate(0.5deg); }
+    }
+    .shake-animation {
+      animation: frameShake 0.4s infinite ease-in-out;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0284c7;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
+
+  <!-- Header Navigation Bar -->
+  <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700/80 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-cyan-600 to-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-cyan-500/20">
+          <i class="fa-solid fa-shield-halved text-xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[11px] font-semibold px-2 py-0.5 bg-cyan-950 text-cyan-400 border border-cyan-800 rounded">서울특별시 송파구</span>
+            <span class="text-xs text-slate-400">아이티에스뱅크 제안</span>
+          </div>
+          <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">
+            우회전 사고방지 보행안전지원 시스템
+          </h1>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation Tabs -->
+      <nav class="hidden lg:flex space-x-1 bg-slate-900/60 p-1 rounded-xl border border-slate-700/60">
+        <button onclick="switchTab('simulation')" id="tab-btn-simulation" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20">
+          <i class="fa-solid fa-play"></i>
+          <span>실시간 시뮬레이터</span>
+        </button>
+        <button onclick="switchTab('pedestrianApp')" id="tab-btn-pedestrianApp" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-1.5">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+          <span>보행자 스마트폰 앱</span>
+        </button>
+        <button onclick="switchTab('vehicleApp')" id="tab-btn-vehicleApp" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-1.5">
+          <i class="fa-solid fa-bus"></i>
+          <span>대형차량 단말 앱</span>
+        </button>
+        <button onclick="switchTab('architecture')" id="tab-btn-architecture" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-1.5">
+          <i class="fa-solid fa-microchip"></i>
+          <span>시스템 구성도</span>
+        </button>
+        <button onclick="switchTab('flow')" id="tab-btn-flow" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-1.5">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>운용 플로우</span>
+        </button>
+        <button onclick="switchTab('comparison')" id="tab-btn-comparison" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-1.5">
+          <i class="fa-solid fa-bolt"></i>
+          <span>기술 차별성</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Mobile Navigation Bar -->
+    <div class="lg:hidden flex overflow-x-auto p-2 bg-slate-900 border-t border-slate-800 space-x-2">
+      <button onclick="switchTab('simulation')" id="mobile-tab-simulation" class="mobile-tab-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-cyan-500 text-slate-950">시뮬레이터</button>
+      <button onclick="switchTab('pedestrianApp')" id="mobile-tab-pedestrianApp" class="mobile-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 whitespace-nowrap">보행자 앱</button>
+      <button onclick="switchTab('vehicleApp')" id="mobile-tab-vehicleApp" class="mobile-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 whitespace-nowrap">대형차량 앱</button>
+      <button onclick="switchTab('architecture')" id="mobile-tab-architecture" class="mobile-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 whitespace-nowrap">구성도</button>
+      <button onclick="switchTab('flow')" id="mobile-tab-flow" class="mobile-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 whitespace-nowrap">운용 플로우</button>
+      <button onclick="switchTab('comparison')" id="mobile-tab-comparison" class="mobile-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 whitespace-nowrap">기술 차별성</button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- TAB 1: REALTIME SIMULATOR -->
+    <section id="tab-simulation" class="tab-content space-y-6">
+      <!-- Top Info Banner -->
+      <div class="bg-gradient-to-r from-cyan-900/40 via-slate-800 to-blue-900/30 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2 text-cyan-400 text-sm font-semibold mb-1">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>4거리 교차로 대기공간 및 횡단보도 보행자 실시간 시뮬레이터</span>
+          </div>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            우회전 차량 진입 시 <strong class="text-emerald-400">횡단보도 하단 대기공간 보행자(A·B·C) 및 상단 대기자</strong>, 그리고 <strong class="text-amber-400">횡단보도 내부 이동 보행자</strong>를 동시 감지하여 우회전 코너 노변 장치가 빛과 소리로 경고하는 동작 시뮬레이션입니다.
+          </p>
+        </div>
+
+        <div class="flex items-center space-x-3 self-end md:self-center shrink-0">
+          <button id="auto-play-btn" onclick="toggleAutoPlay()" class="px-4 py-2.5 rounded-xl font-bold text-sm flex items-center space-x-2 transition shadow-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20">
+            <i id="auto-play-icon" class="fa-solid fa-play"></i>
+            <span id="auto-play-text">자동 시뮬레이션</span>
+          </button>
+          <button onclick="resetSimulation()" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition" title="초기화">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Canvas Stage (8 cols) -->
+        <div id="sim-canvas-container" class="lg:col-span-8 bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 sm:p-6 relative overflow-hidden min-h-[480px] flex flex-col justify-between transition-all duration-300">
+          
+          <!-- Mode Indicators -->
+          <div class="flex flex-wrap items-center justify-between gap-2 z-10">
+            <div class="flex items-center space-x-2 bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="font-medium text-slate-300">4거리 교차로 하단 대기자 & 횡단자 동시 감시</span>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <button id="sound-toggle-btn" onclick="toggleSound()" class="p-1.5 rounded-xl border text-xs transition flex items-center space-x-1 bg-cyan-950 border-cyan-700 text-cyan-300">
+                <i id="sound-toggle-icon" class="fa-solid fa-volume-high"></i>
+                <span id="sound-toggle-text" class="hidden sm:inline">음향 ON</span>
+              </button>
+
+              <button id="vibe-toggle-btn" onclick="toggleVibration()" class="p-1.5 rounded-xl border text-xs transition flex items-center space-x-1 bg-purple-950 border-purple-700 text-purple-300">
+                <i class="fa-solid fa-mobile-retro"></i>
+                <span id="vibe-toggle-text" class="hidden sm:inline">진동 ON</span>
+              </button>
+
+              <button id="ped-presence-btn" onclick="togglePedestrianPresence()" class="px-3 py-1.5 rounded-xl text-xs font-medium border transition flex items-center space-x-1.5 bg-emerald-950 text-emerald-400 border-emerald-700/80">
+                <i class="fa-solid fa-users"></i>
+                <span id="ped-presence-text">보행자 감지: 하단 대기+횡단 중 (경고)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SVG 4-Way Intersection Graphics -->
+          <div class="relative w-full h-[370px] my-3 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center">
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 400" preserveAspectRatio="none">
+              <!-- Background Grass -->
+              <rect x="0" y="0" width="800" height="400" fill="#0b1329" />
+              
+              <!-- 4-Way Road Pavement -->
+              <rect x="220" y="0" width="140" height="400" fill="#1e293b" />
+              <rect x="0" y="130" width="800" height="140" fill="#1e293b" />
+              <rect x="220" y="130" width="140" height="140" fill="#1e293b" />
+
+              <!-- Sidewalk Corners -->
+              <rect x="0" y="0" width="220" height="130" fill="#0f172a" stroke="#334155" stroke-width="2" />
+              <rect x="360" y="0" width="440" height="130" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+              <rect x="0" y="270" width="220" height="130" fill="#0f172a" stroke="#334155" stroke-width="2" />
+              <rect x="360" y="270" width="440" height="130" fill="#0f172a" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 4" />
+
+              <!-- Yellow Centerlines -->
+              <line x1="289" y1="0" x2="289" y2="130" stroke="#f59e0b" stroke-width="2" />
+              <line x1="291" y1="0" x2="291" y2="130" stroke="#f59e0b" stroke-width="2" />
+              <line x1="289" y1="270" x2="289" y2="400" stroke="#f59e0b" stroke-width="2" />
+              <line x1="291" y1="270" x2="291" y2="400" stroke="#f59e0b" stroke-width="2" />
+
+              <line x1="0" y1="199" x2="220" y2="199" stroke="#f59e0b" stroke-width="2" />
+              <line x1="0" y1="201" x2="220" y2="201" stroke="#f59e0b" stroke-width="2" />
+              <line x1="360" y1="199" x2="800" y2="199" stroke="#f59e0b" stroke-width="2" />
+              <line x1="360" y1="201" x2="800" y2="201" stroke="#f59e0b" stroke-width="2" />
+
+              <!-- Non-target Crosswalks -->
+              <g transform="translate(160, 135)">
+                <rect x="0" y="0" width="35" height="8" fill="#475569" opacity="0.6" rx="1" />
+                <rect x="0" y="16" width="35" height="8" fill="#475569" opacity="0.6" rx="1" />
+                <rect x="0" y="32" width="35" height="8" fill="#475569" opacity="0.6" rx="1" />
+                <rect x="0" y="48" width="35" height="8" fill="#475569" opacity="0.6" rx="1" />
+                <rect x="0" y="64" width="35" height="8" fill="#475569" opacity="0.6" rx="1" />
+                <rect x="0" y="80" width="35" height="8" fill="#475569" opacity="0.6" rx="1" />
+                <rect x="0" y="96" width="35" height="8" fill="#475569" opacity="0.6" rx="1" />
+                <rect x="0" y="112" width="35" height="8" fill="#475569" opacity="0.6" rx="1" />
+              </g>
+
+              <!-- TARGET EAST CROSSWALK -->
+              <g transform="translate(440, 135)">
+                <rect x="-5" y="-5" width="50" height="140" fill="#1e293b" rx="4" />
+                <rect x="0" y="0" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <rect x="0" y="15" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <rect x="0" y="30" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <rect x="0" y="45" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <rect x="0" y="60" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <rect x="0" y="75" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <rect x="0" y="90" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <rect x="0" y="105" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <rect x="0" y="120" width="40" height="9" fill="#e2e8f0" opacity="0.9" rx="1.5" />
+                <text x="20" y="-12" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="bold">우회전 횡단보도</text>
+              </g>
+
+              <!-- Bottom Waiting Zone -->
+              <g transform="translate(415, 280)">
+                <rect x="0" y="0" width="110" height="65" fill="#022c22" stroke="#10b981" stroke-width="2" rx="10" stroke-dasharray="3 3" />
+                <text x="55" y="15" text-anchor="middle" fill="#34d399" font-size="10" font-weight="bold">대기공간 (하단 인도)</text>
+                <text x="55" y="27" text-anchor="middle" fill="#059669" font-size="8">횡단 대기 보행자 감지구역</text>
+              </g>
+
+              <!-- Top Waiting Zone -->
+              <g transform="translate(425, 65)">
+                <rect x="0" y="0" width="75" height="55" fill="#022c22" stroke="#10b981" stroke-width="1.5" rx="10" stroke-dasharray="3 3" />
+                <text x="37" y="16" text-anchor="middle" fill="#34d399" font-size="10" font-weight="bold">대기공간 (상단)</text>
+              </g>
+
+              <!-- Dynamic Pedestrians Group -->
+              <g id="svg-pedestrians-group">
+                <!-- Pedestrian A (Bottom Waiter - Smartphone User) -->
+                <g transform="translate(435, 318)" class="animate-bounce" style="animation-duration: 2.2s;">
+                  <circle cx="0" cy="-7" r="5" fill="#10b981" />
+                  <path d="M -4 0 L 4 0 L 5 13 L -5 13 Z" fill="#10b981" />
+                  <circle cx="0" cy="0" r="14" fill="none" stroke="#10b981" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.8" />
+                  <rect x="2" y="-3" width="3" height="5" fill="#38bdf8" rx="0.5" />
+                  <text x="0" y="24" text-anchor="middle" fill="#a7f3d0" font-size="8" font-weight="bold">하단 횡단대기 A</text>
+                </g>
+
+                <!-- Pedestrian B (Bottom Waiter - Elderly/General) -->
+                <g transform="translate(465, 328)" class="animate-bounce" style="animation-duration: 1.8s;">
+                  <circle cx="0" cy="-7" r="5" fill="#34d399" />
+                  <path d="M -4 0 L 4 0 L 5 13 L -5 13 Z" fill="#34d399" />
+                  <text x="0" y="22" text-anchor="middle" fill="#a7f3d0" font-size="8" font-weight="bold">하단 횡단대기 B</text>
+                </g>
+
+                <!-- Pedestrian F (Bottom Waiter - Additional Crossing Waiter) -->
+                <g transform="translate(495, 316)" class="animate-bounce" style="animation-duration: 2.5s;">
+                  <circle cx="0" cy="-7" r="5" fill="#059669" />
+                  <path d="M -4 0 L 4 0 L 5 13 L -5 13 Z" fill="#059669" />
+                  <circle cx="0" cy="0" r="12" fill="none" stroke="#059669" stroke-width="1.5" opacity="0.7" />
+                  <text x="0" y="22" text-anchor="middle" fill="#a7f3d0" font-size="8" font-weight="bold">하단 횡단대기 C</text>
+                </g>
+
+                <!-- Pedestrian C (Crosswalk Walker Northbound) -->
+                <g id="svg-ped-c" transform="translate(460, 250)" class="transition-all duration-700 ease-in-out">
+                  <circle id="svg-ped-c-alert" cx="0" cy="0" r="22" fill="#f59e0b" opacity="0" class="animate-ping" />
+                  <circle id="svg-ped-c-head" cx="0" cy="-8" r="6" fill="#f59e0b" />
+                  <path id="svg-ped-c-body" d="M -5 0 L 5 0 L 6 15 L -6 15 Z" fill="#f59e0b" />
+                  <text id="svg-ped-c-text" x="0" y="-16" text-anchor="middle" fill="#fde047" font-size="9" font-weight="bold">🚶 횡단보도 건너는 중</text>
+                </g>
+
+                <!-- Pedestrian D (Crosswalk Walker Southbound) -->
+                <g id="svg-ped-d" transform="translate(448, 150)" class="transition-all duration-700 ease-in-out">
+                  <circle id="svg-ped-d-alert" cx="0" cy="0" r="20" fill="#f59e0b" opacity="0" class="animate-ping" />
+                  <circle id="svg-ped-d-head" cx="0" cy="-8" r="5.5" fill="#f59e0b" />
+                  <path id="svg-ped-d-body" d="M -4.5 0 L 4.5 0 L 5.5 14 L -5.5 14 Z" fill="#f59e0b" />
+                </g>
+
+                <!-- Pedestrian E (Top Waiter) -->
+                <g transform="translate(460, 95)">
+                  <circle cx="0" cy="-6" r="5" fill="#10b981" />
+                  <path d="M -4 0 L 4 0 L 4.5 12 L -4.5 12 Z" fill="#10b981" />
+                  <text x="0" y="20" text-anchor="middle" fill="#a7f3d0" font-size="8">상단 대기자</text>
+                </g>
+              </g>
+
+              <!-- Roadside Unit at Corner -->
+              <g transform="translate(370, 280)">
+                <circle cx="0" cy="0" r="11" fill="#0284c7" stroke="#38bdf8" stroke-width="2.5" />
+                <rect x="-4" y="-4" width="8" height="8" fill="#ffffff" rx="1" />
+                <text x="-5" y="24" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="bold">노변 알림장치</text>
+                <text x="-5" y="36" text-anchor="middle" fill="#94a3b8" font-size="9">(우회전 코너 볼라드)</text>
+                <path d="M -10 10 L -40 70 L 10 50 Z" fill="#0284c7" opacity="0.2" />
+              </g>
+
+              <!-- VEHICLE OBJECT -->
+              <g id="svg-vehicle" transform="translate(325, 360) rotate(0)" class="transition-all duration-700 ease-out">
+                <rect x="-22" y="-42" width="44" height="84" fill="#2563eb" rx="7" stroke="#60a5fa" stroke-width="2" />
+                <rect x="-18" y="-32" width="36" height="18" fill="#93c5fd" opacity="0.8" rx="3" />
+                <rect x="-7" y="-4" width="14" height="14" fill="#0f172a" rx="3" />
+                <circle id="svg-veh-roof-ping" cx="0" cy="3" r="3" fill="#475569" />
+
+                <!-- Turn Signal Lamp (Front Right) -->
+                <circle id="svg-turn-lamp" cx="18" cy="-38" r="5" fill="#334155" />
+                <circle id="svg-turn-lamp-ping" cx="18" cy="-38" r="12" fill="#f59e0b" opacity="0" />
+
+                <!-- Directional RF Waves -->
+                <g id="svg-rf-waves" opacity="0" transform="translate(0, -42)">
+                  <path d="M -18 -12 Q 0 -30 18 -12" stroke="#38bdf8" stroke-width="3" fill="none" class="animate-pulse" />
+                  <path d="M -30 -25 Q 0 -50 30 -25" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.7" />
+                </g>
+              </g>
+
+              <!-- Warning Beam Effect Group (Step 5) -->
+              <g id="svg-warning-effect-group" opacity="0" transform="translate(370, 280)">
+                <path d="M 0 0 L 60 -125 L 140 -60 L 130 65 Z" fill="#f59e0b" opacity="0.38" class="animate-pulse" />
+                <circle cx="0" cy="0" r="45" fill="none" stroke="#f59e0b" stroke-width="3" opacity="0.8" class="animate-ping" />
+                <circle cx="0" cy="0" r="95" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.5" />
+                <g transform="translate(-165, -70)">
+                  <rect x="0" y="0" width="170" height="48" fill="#0f172a" stroke="#f59e0b" stroke-width="2" rx="8" />
+                  <text x="85" y="20" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">⚠️ 하단대기자 & 횡단보도 경고</text>
+                  <text x="85" y="34" text-anchor="middle" fill="#cbd5e1" font-size="9">빛 표출 + 광대역 음향 + 앱 팝업</text>
+                </g>
+              </g>
+            </svg>
+          </div>
+
+          <!-- Status Indicator Footer -->
+          <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center space-x-2">
+              <span class="text-slate-400">시뮬레이션 단계 (<span id="sim-step-num">0</span>/6):</span>
+              <span id="sim-step-text" class="font-bold text-cyan-400">대기 상태 (차량 남측 차로 접근 중)</span>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <span id="lever-badge" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-400">
+                우회전 레버: OFF
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar (4 cols) -->
+        <div class="lg:col-span-4 space-y-4">
+          <!-- Smartphone App Preview Sync Card -->
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-white flex items-center space-x-1.5">
+                <i class="fa-solid fa-mobile-screen text-emerald-400"></i>
+                <span>보행자 스마트폰 앱 실시간 연동</span>
+              </h3>
+              <button onclick="switchTab('pedestrianApp')" class="text-[10px] bg-emerald-950 text-emerald-300 hover:text-white px-2 py-1 rounded border border-emerald-800 flex items-center space-x-1">
+                <span>전용 탭으로 이동</span>
+                <i class="fa-solid fa-chevron-right text-[9px]"></i>
+              </button>
+            </div>
+
+            <div id="sim-mini-phone" class="bg-slate-950 rounded-2xl border-4 border-slate-700 p-3 relative overflow-hidden transition-all duration-300">
+              <div class="flex justify-between items-center text-[9px] text-slate-400 mb-2 border-b border-slate-800 pb-1">
+                <span>12:34</span>
+                <span class="font-bold text-emerald-400">안전보행 스마트앱</span>
+                <span>100%</span>
+              </div>
+
+              <div id="sim-mini-phone-content">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center space-y-1.5">
+                  <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+                  <div class="text-xs font-bold text-slate-200">하단 대기공간 & 횡단보도 감지 구역</div>
+                  <p class="text-[10px] text-slate-400">하단 횡단대기자(A·B·C) 및 횡단보도 보행자 감지 완료</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manual Controls -->
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-bold text-white flex items-center justify-between">
+              <span>수동 레버 조작</span>
+              <i class="fa-solid fa-sliders text-cyan-400"></i>
+            </h3>
+
+            <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex items-center justify-between">
+              <div>
+                <div class="text-xs font-semibold text-slate-200">우회전 방향지시 레버</div>
+                <div class="text-[10px] text-slate-400">차량 배선 개조 없는 부착형</div>
+              </div>
+              <button id="manual-lever-btn" onclick="toggleManualLever()" class="px-3 py-1.5 rounded-lg text-xs font-bold transition shadow bg-slate-700 text-slate-200 hover:bg-slate-600">
+                우회전 레버 올려보기
+              </button>
+            </div>
+          </div>
+
+          <!-- Sequence Step Progress List -->
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-2">
+            <h3 class="text-xs font-bold text-white flex items-center justify-between">
+              <span>동작 시퀀스 진행</span>
+              <i class="fa-solid fa-clock text-cyan-400"></i>
+            </h3>
+
+            <div class="space-y-1.5">
+              <div onclick="setSimStep(1)" id="step-nav-1" class="step-nav-item p-2 rounded-xl border border-slate-800 bg-slate-900/30 text-xs cursor-pointer transition flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-slate-800 text-slate-400">1</span>
+                  <div class="text-slate-200 text-[11px]">운전자 레버 조작</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-cyan-400 text-xs hidden nav-arrow"></i>
+              </div>
+
+              <div onclick="setSimStep(2)" id="step-nav-2" class="step-nav-item p-2 rounded-xl border border-slate-800 bg-slate-900/30 text-xs cursor-pointer transition flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-slate-800 text-slate-400">2</span>
+                  <div class="text-slate-200 text-[11px]">무선 신호 송출</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-cyan-400 text-xs hidden nav-arrow"></i>
+              </div>
+
+              <div onclick="setSimStep(3)" id="step-nav-3" class="step-nav-item p-2 rounded-xl border border-slate-800 bg-slate-900/30 text-xs cursor-pointer transition flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-slate-800 text-slate-400">3</span>
+                  <div class="text-slate-200 text-[11px]">우회전 코너 수신</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-cyan-400 text-xs hidden nav-arrow"></i>
+              </div>
+
+              <div onclick="setSimStep(4)" id="step-nav-4" class="step-nav-item p-2 rounded-xl border border-slate-800 bg-slate-900/30 text-xs cursor-pointer transition flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-slate-800 text-slate-400">4</span>
+                  <div class="text-slate-200 text-[11px]">하단 대기자 & 횡단자 검지</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-cyan-400 text-xs hidden nav-arrow"></i>
+              </div>
+
+              <div onclick="setSimStep(5)" id="step-nav-5" class="step-nav-item p-2 rounded-xl border border-slate-800 bg-slate-900/30 text-xs cursor-pointer transition flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-slate-800 text-slate-400">5</span>
+                  <div class="text-slate-200 text-[11px]">빛·음향·앱 경고</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-cyan-400 text-xs hidden nav-arrow"></i>
+              </div>
+
+              <div onclick="setSimStep(6)" id="step-nav-6" class="step-nav-item p-2 rounded-xl border border-slate-800 bg-slate-900/30 text-xs cursor-pointer transition flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-slate-800 text-slate-400">6</span>
+                  <div class="text-slate-200 text-[11px]">자동 해제 종료</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-cyan-400 text-xs hidden nav-arrow"></i>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: PEDESTRIAN SMARTPHONE APP -->
+    <section id="tab-pedestrianApp" class="tab-content hidden space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+          <i class="fa-solid fa-mobile-screen text-emerald-400"></i>
+          <span>보행자용 스마트폰 안전 지원 앱 (Pedestrian Safety App)</span>
+        </h2>
+        <p class="text-slate-400 text-sm mt-1">
+          청각장애인, 고령자, 이어폰 착용 보행자 등을 지원하기 위해 노변 알림장치와 100% 병행 운용되는 보조 스마트 알림 앱입니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Phone Frame Mockup (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col items-center justify-center">
+          <div id="ped-phone-shell" class="w-full max-w-[340px] bg-slate-950 rounded-[40px] border-[8px] border-slate-800 p-4 shadow-2xl relative overflow-hidden transition-all duration-300">
+            <!-- Phone Notch -->
+            <div class="w-28 h-4 bg-slate-800 rounded-b-xl mx-auto mb-3 flex items-center justify-center">
+              <div class="w-8 h-1 bg-slate-600 rounded-full"></div>
+            </div>
+
+            <!-- App Header -->
+            <div class="flex items-center justify-between text-xs pb-2 border-b border-slate-800">
+              <div class="flex items-center space-x-1.5 text-emerald-400 font-bold">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>송파 안전보행</span>
+              </div>
+              <div class="flex items-center space-x-1 text-[10px] text-slate-400">
+                <i class="fa-solid fa-location-arrow text-cyan-400"></i>
+                <span>GPS 연결됨</span>
+              </div>
+            </div>
+
+            <!-- Dynamic App Screen -->
+            <div id="ped-app-screen-body" class="my-5 space-y-4">
+              <!-- Content injected via JS -->
+            </div>
+
+            <!-- App Controls -->
+            <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
+              <div class="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                <span>앱 설정 & 테스트</span>
+                <i class="fa-solid fa-gear text-slate-400"></i>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-[10px]">
+                <button onclick="toggleHeadsetMode()" id="headset-btn" class="p-2 rounded-xl border flex items-center justify-between bg-cyan-950 border-cyan-700 text-cyan-300">
+                  <span>이어폰 팝업</span>
+                  <span id="headset-status" class="font-bold">ON</span>
+                </button>
+
+                <button onclick="toggleAccessibilityMode()" id="access-btn" class="p-2 rounded-xl border flex items-center justify-between bg-slate-800 border-slate-700 text-slate-500">
+                  <span>고대비 모드</span>
+                  <span id="access-status" class="font-bold">OFF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Description & State Trigger (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center justify-between">
+              <span>스마트폰 앱 동작 상태 전환 테스트</span>
+              <i class="fa-solid fa-mobile-retro text-emerald-400"></i>
+            </h3>
+
+            <div class="grid grid-cols-3 gap-3">
+              <button onclick="setPedestrianStatus('walking')" id="btn-ped-status-walking" class="p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700">
+                <i class="fa-solid fa-users text-sm"></i>
+                <span>1. 일반 이동 중</span>
+              </button>
+
+              <button onclick="setPedestrianStatus('standing')" id="btn-ped-status-standing" class="p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-emerald-950 border-emerald-500 text-emerald-300">
+                <i class="fa-solid fa-circle-check text-sm"></i>
+                <span>2. 대기/횡단 감지</span>
+              </button>
+
+              <button onclick="setPedestrianStatus('warning')" id="btn-ped-status-warning" class="p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-slate-900 border-slate-800 text-amber-400 hover:border-amber-700">
+                <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+                <span>3. ⚠️ 차량 경고</span>
+              </button>
+            </div>
+
+            <div class="flex items-center space-x-3 pt-2">
+              <button onclick="playWarningBeep('위험! 우회전 차량이 접근 중입니다.')" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-700 text-cyan-300 border border-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition">
+                <i class="fa-solid fa-volume-high text-cyan-400"></i>
+                <span>한글 음성 안내(TTS) 테스트</span>
+              </button>
+
+              <button onclick="triggerVibration()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-700 text-purple-300 border border-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition">
+                <i class="fa-solid fa-mobile-retro text-purple-400"></i>
+                <span>모바일 진동 모터 테스트</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-4 space-y-2">
+              <div class="flex items-center space-x-2 text-emerald-400 font-bold">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>스마트 오알림 억제 알고리즘</span>
+              </div>
+              <p class="text-slate-300 leading-relaxed">
+                스마트폰의 가속도 센서와 GPS를 활용하여 보행자가 교차로 하단 대기공간이나 횡단보도 구역에 접근해 있을 때만 신호를 수신합니다. 무분별한 스팸 알림을 막아 사용자 피로도를 방지합니다.
+              </p>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-4 space-y-2">
+              <div class="flex items-center space-x-2 text-cyan-400 font-bold">
+                <i class="fa-solid fa-volume-high"></i>
+                <span>이어폰·고령자 3중 복합 알림</span>
+              </div>
+              <p class="text-slate-300 leading-relaxed">
+                야외 소음으로 소리를 듣지 못하거나 이어폰 착용자, 청각장애인을 위해 촉각(진동), 시각(대형 팝업), 청각(음성)을 동시 제공합니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-amber-500/40 rounded-2xl p-4 flex items-start space-x-3 text-xs">
+            <i class="fa-solid fa-circle-info text-amber-400 text-base shrink-0 mt-0.5"></i>
+            <div class="space-y-1">
+              <div class="font-bold text-amber-300">스마트폰 앱 단독 사용 금지 지침</div>
+              <p class="text-slate-300 leading-relaxed">
+                스마트폰 미소지자나 앱 미설치 보행자의 안전 공백을 방지하기 위해, 본 앱은 **우회전 코너 노변 알림장치(빛·광대역 음향)와 100% 병행하여 보조 수단으로만 운용**됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: LARGE VEHICLE DRIVER TERMINAL APP -->
+    <section id="tab-vehicleApp" class="tab-content hidden space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+          <i class="fa-solid fa-bus text-amber-400"></i>
+          <span>대형차량(노선버스·통학버스·화물차) 운전자 단말 앱</span>
+        </h2>
+        <p class="text-slate-400 text-sm mt-1">
+          우회전 사고 발생 비율이 가장 높은 대형 상용차를 위한 차량용 내장 단말 및 운전자 HUD 디스플레이 시스템입니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Terminal HUD Screen (7 cols) -->
+        <div class="lg:col-span-7 bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 space-y-5 shadow-2xl">
+          <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div id="veh-type-icon-box" class="p-2 bg-amber-950 border border-amber-800 rounded-lg text-amber-400">
+                <i class="fa-solid fa-bus text-lg"></i>
+              </div>
+              <div>
+                <div id="veh-type-title" class="text-xs font-bold text-white">서울특별시 노선버스 (송파 301번)</div>
+                <div class="text-[10px] text-slate-400">송파구 우회전 안전지원 통합 단말 v2.4</div>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2 text-xs">
+              <span class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 font-mono">
+                속도: 25 km/h
+              </span>
+            </div>
+          </div>
+
+          <!-- Interactive HUD Screen Body -->
+          <div id="driver-hud-screen" class="p-6 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden bg-slate-950 border-slate-800">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Left Panel -->
+              <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl space-y-2">
+                <div class="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
+                  <span>방향지시 레버 감지부</span>
+                  <i class="fa-solid fa-tower-broadcast text-cyan-400"></i>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                  <span id="hud-lever-ping" class="w-3 h-3 rounded-full bg-slate-700"></span>
+                  <span id="hud-lever-status-text" class="text-sm font-extrabold text-white">중립 / 레버 미조작 (OFF)</span>
+                </div>
+                <p class="text-[10px] text-slate-400">차량 전기 배선 연결 없음 (간이 부착 센서 동작)</p>
+              </div>
+
+              <!-- Right Panel -->
+              <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl space-y-2">
+                <div class="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
+                  <span>전방 무선 송출부 (RF Transmitter)</span>
+                  <i class="fa-solid fa-bolt text-amber-400"></i>
+                </div>
+
+                <div id="hud-rf-status-text" class="text-xs font-bold text-amber-300">💤 신호 송출 대기 중</div>
+                <p class="text-[10px] text-slate-400">우측 측면 유리 안테나 배치 (적외선 반사막 영향 배제)</p>
+              </div>
+            </div>
+
+            <!-- Driver Feedback Alert Banner -->
+            <div id="driver-alert-banner" class="mt-5">
+              <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+                <span>우회전 시 레버를 올리면 노변장치로 무선 신호가 자동 송출됩니다.</span>
+                <i class="fa-solid fa-circle-check text-emerald-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Controls -->
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="text-xs">
+              <span class="font-bold text-slate-200">차량 내부 레버 시뮬레이션:</span>
+              <span class="text-slate-400 ml-1">운전석 레버를 올렸을 때의 변화를 확인하세요.</span>
+            </div>
+
+            <button id="driver-tab-lever-btn" onclick="toggleManualLever()" class="px-4 py-2 rounded-xl text-xs font-bold transition shadow bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700">
+              우회전 레버 올려보기
+            </button>
+          </div>
+        </div>
+
+        <!-- Vehicle Selection & Advantages (5 cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 space-y-3">
+            <h3 class="text-xs font-bold text-white flex items-center justify-between">
+              <span>보급 대상 차종 선택</span>
+              <i class="fa-solid fa-car text-amber-400"></i>
+            </h3>
+
+            <div class="space-y-2 text-xs">
+              <div onclick="selectVehicleType('bus')" id="veh-card-bus" class="p-3 rounded-xl border cursor-pointer transition bg-amber-950/70 border-amber-500 text-amber-200 font-semibold">
+                <div class="text-slate-200">관내 노선버스 (1단계 우선보급)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">통행 노선이 고정되어 보급 효과 및 사고 감소율 측정 용이</div>
+              </div>
+
+              <div onclick="selectVehicleType('school_bus')" id="veh-card-school_bus" class="p-3 rounded-xl border cursor-pointer transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700">
+                <div class="text-slate-200">어린이 통학버스 (2단계 보급)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">어린이 보호구역 통행이 잦고 관리 주체가 명확</div>
+              </div>
+
+              <div onclick="selectVehicleType('truck')" id="veh-card-truck" class="p-3 rounded-xl border cursor-pointer transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700">
+                <div class="text-slate-200">대형 화물운송차량 (3단계 협의)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">우회전 사고 치명률이 가장 높은 차종군</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 space-y-3 text-xs">
+            <h3 class="font-bold text-white text-xs flex items-center space-x-1.5">
+              <i class="fa-solid fa-circle-check text-emerald-400"></i>
+              <span>차량 단말 무개조·무배선 특장점</span>
+            </h3>
+
+            <ul class="space-y-2 text-slate-300">
+              <li class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                <strong class="text-amber-300 block mb-0.5">1. 차량 전기배선 무연결</strong>
+                차량 화재 및 전기 고장 분쟁 소지를 원천 제거하여 운수 회사 거부감 없음.
+              </li>
+              <li class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                <strong class="text-amber-300 block mb-0.5">2. 자동차 검사/튜닝 승인 불요</strong>
+                외관 변경 및 신호 라인 개조가 전혀 없어 튜닝 승인 절차 생략.
+              </li>
+              <li class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                <strong class="text-amber-300 block mb-0.5">3. 12V~32V 전범위 전원 대응</strong>
+                대형 상용차 24V계 전원 시거잭 소켓 및 내장 축전지 자동 병행.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SYSTEM ARCHITECTURE -->
+    <section id="tab-architecture" class="tab-content hidden space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+          <i class="fa-solid fa-microchip text-cyan-400"></i>
+          <span>우회전 안전지원 시스템 하드웨어 구성도</span>
+        </h2>
+        <p class="text-slate-400 text-sm mt-1">
+          차량 내 단말, 노변 알림장치, 보행자 스마트폰 앱의 3대 핵심 요소로 구성되어 있습니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Vehicle Unit -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 flex flex-col justify-between hover:border-cyan-500/50 transition">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+              <div class="flex items-center space-x-2">
+                <div class="p-2 bg-blue-950 border border-blue-800 rounded-xl text-blue-400">
+                  <i class="fa-solid fa-car text-lg"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-base">차량 내 단말</h3>
+                  <span class="text-[11px] text-blue-400 font-medium">차량 개조·배선 연결 무관</span>
+                </div>
+              </div>
+            </div>
+
+            <ul class="mt-4 space-y-3 text-xs text-slate-300">
+              <li class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                <strong class="text-cyan-300 block mb-1">1. 레버 장착부</strong>
+                방향지시 조작 레버에 간이 부착. 레버의 조작감 및 차량 전기배선에 영향 없이 조작 동작을 물리적/전자적으로 인식.
+              </li>
+              <li class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                <strong class="text-cyan-300 block mb-1">2. 제어부 (Compact Body)</strong>
+                가로 60mm × 세로 60mm × 높이 30mm 초소형 설계. 스티어링 컬럼 또는 대시보드 하부에 간편 부착.
+              </li>
+              <li class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                <strong class="text-cyan-300 block mb-1">3. 전원부 & 안테나</strong>
+                12V~32V 보조전원 소켓 및 내장 축전지 병행. 전면 유리 적외선 반사막 감쇠를 피하기 위해 우측 측면 유리배치.
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+            <span>적용 대상:</span>
+            <span class="text-white font-medium">노선버스, 통학버스, 화물차 우선</span>
+          </div>
+        </div>
+
+        <!-- Roadside Unit -->
+        <div class="bg-slate-800/80 border border-cyan-500/40 rounded-2xl p-5 flex flex-col justify-between relative shadow-xl shadow-cyan-950/30">
+          <div class="absolute -top-3 right-4 bg-cyan-500 text-slate-950 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            핵심 장치
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+              <div class="flex items-center space-x-2">
+                <div class="p-2 bg-cyan-950 border border-cyan-800 rounded-xl text-cyan-400">
+                  <i class="fa-solid fa-tower-broadcast text-lg"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-base">노변 알림장치</h3>
+                  <span class="text-[11px] text-cyan-400 font-medium">태양광 독립 전원 (신호주 미사용)</span>
+                </div>
+              </div>
+            </div>
+
+            <ul class="mt-4 space-y-3 text-xs text-slate-300">
+              <li class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                <strong class="text-cyan-300 block mb-1">1. 태양광 독립 전원부</strong>
+                상용전원 인입 불요. 50W 태양광 모듈 + 12.8V 12Ah 인산철 축전지 설계 (무일조 자립 3~5일 확보).
+              </li>
+              <li class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                <strong class="text-cyan-300 block mb-1">2. 우회전 코너 수신 & 횡단보도/대기검지</strong>
+                접근 차로 지향 수신으로 인접 구역 배제. 횡단보도 상 보행자 및 하단 대기공간 재실 검지 시에만 출력.
+              </li>
+              <li class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                <strong class="text-cyan-300 block mb-1">3. 빛 / 고정문자 / 광대역 음향</strong>
+                주야간 자동 휘도 제어 경광 + 고정식 안전 표지판 + 광대역 과도음(고령자 특화) 및 소음 연동 음압 제어.
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+            <span>설치 위치:</span>
+            <span class="text-cyan-300 font-semibold">우회전 코너 볼라드, 가로등주, 방호울타리</span>
+          </div>
+        </div>
+
+        <!-- Pedestrian App -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 flex flex-col justify-between hover:border-cyan-500/50 transition">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+              <div class="flex items-center space-x-2">
+                <div class="p-2 bg-emerald-950 border border-emerald-800 rounded-xl text-emerald-400">
+                  <i class="fa-solid fa-mobile-screen-button text-lg"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-base">보행자 스마트폰 앱</h3>
+                  <span class="text-[11px] text-emerald-400 font-medium">선택 사양 (보조 알림)</span>
+                </div>
+              </div>
+            </div>
+
+            <ul class="mt-4 space-y-3 text-xs text-slate-300">
+              <li class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                <strong class="text-emerald-300 block mb-1">1. 다중 알림 수단</strong>
+                이어폰 착용자나 청각장애인을 보완하기 위해 소리, 진동, 팝업 문자로 우회전 차량 접근 알림.
+              </li>
+              <li class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                <strong class="text-emerald-300 block mb-1">2. 보행 패턴 판독 스마트 오알림 억제</strong>
+                보행자가 교차로 대기공간이나 횡단보도 구역에 정지/진입해 있을 때만 알림을 수신하도록 보행 상태 자동 판정.
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+            <span>운용 특징:</span>
+            <span class="text-white font-medium">단독 사용 금지, 노변장치와 병행</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Installation Jurisdiction Distinction -->
+      <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+          <i class="fa-solid fa-building-flag text-cyan-400"></i>
+          <span>현장 설치 및 구 관할 소관 구분</span>
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div class="bg-red-950/30 border border-red-800/50 rounded-xl p-4 space-y-2">
+            <div class="flex items-center space-x-2 text-red-400 font-bold text-sm">
+              <i class="fa-solid fa-circle-xmark"></i>
+              <span>설치 제외 지주 (경찰청 소관 / 심의 필요)</span>
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              교통신호주, 교통안전표지 지주, 신호제어기 함체 등은 경찰 협의 및 교통안전시설 심의 대상입니다. <strong class="text-red-300">본 시스템은 이 지주들을 절대 사용하지 않습니다.</strong>
+            </p>
+          </div>
+
+          <div class="bg-emerald-950/30 border border-emerald-800/50 rounded-xl p-4 space-y-2">
+            <div class="flex items-center space-x-2 text-emerald-400 font-bold text-sm">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>설치 대상 지주 (송파구 도로관리청 소관)</span>
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              도로부속물에 해당하는 <strong class="text-emerald-300">우회전 코너 볼라드, 가로등주(조명주), 방호울타리, 신설 독립지주</strong>에만 단독 설치되므로, 구청 단독 판단으로 즉시 준공이 가능합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: OPERATIONAL FLOW -->
+    <section id="tab-flow" class="tab-content hidden space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+          <i class="fa-solid fa-chart-line text-cyan-400"></i>
+          <span>시스템 동작 시퀀스 (운용 플로우 7단계)</span>
+        </h2>
+        <p class="text-slate-400 text-sm mt-1">
+          운전자의 의도 발생부터 우회전 코너 경고 출력 및 우회전 완료 후 자동 해제까지 전체 흐름입니다.
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="p-4 sm:p-5 rounded-2xl border transition hover:scale-[1.005] bg-amber-950/40 border-amber-800/60">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start space-x-3.5">
+              <span class="text-2xl font-black text-amber-400 font-mono shrink-0">01</span>
+              <div>
+                <h3 class="text-base font-bold text-white">운전자 방향지시 레버 조작</h3>
+                <p class="text-xs text-slate-400 mt-0.5">차량 내부 레버 동작 즉시 감지</p>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">운전자가 4거리 교차로 진입 전 우회전하기 위해 방향지시 레버를 위로 올리는 조작을 수행합니다.</p>
+                <div class="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700 text-[11px] text-cyan-300">
+                  <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                  <span>방향지시등이 1주기 점멸하기 전, 레버 조작 시점부터 즉시 판정 시작</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-700 text-amber-400 shrink-0">
+              <i class="fa-solid fa-car text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 sm:p-5 rounded-2xl border transition hover:scale-[1.005] bg-blue-950/40 border-blue-800/60">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start space-x-3.5">
+              <span class="text-2xl font-black text-blue-400 font-mono shrink-0">02</span>
+              <div>
+                <h3 class="text-base font-bold text-white">우회전 방향 판정 및 무선 신호 송출</h3>
+                <p class="text-xs text-slate-400 mt-0.5">차량 단말기 판정 알고리즘 동작</p>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">조작된 방향이 우회전에 해당하는지 판정합니다. 레버를 걸림 위치까지 내리지 않고 짧게 조작한 차로 변경은 송출을 억제합니다.</p>
+                <div class="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700 text-[11px] text-cyan-300">
+                  <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                  <span>우회전 전용 RF 신호를 전방 방향으로 발신</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-700 text-blue-400 shrink-0">
+              <i class="fa-solid fa-tower-broadcast text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 sm:p-5 rounded-2xl border transition hover:scale-[1.005] bg-cyan-950/40 border-cyan-800/60">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start space-x-3.5">
+              <span class="text-2xl font-black text-cyan-400 font-mono shrink-0">03</span>
+              <div>
+                <h3 class="text-base font-bold text-white">우회전 코너 노변 알림장치 지향 수신</h3>
+                <p class="text-xs text-slate-400 mt-0.5">모퉁이 설치 장치의 접근 차량 수신</p>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">4거리 교차로 우회전 코너에 설치된 노변 알림장치가 진입 차량의 신호를 수신합니다. 직진 차로 및 반대 차로는 지향성 차폐로 제외됩니다.</p>
+                <div class="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700 text-[11px] text-cyan-300">
+                  <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                  <span>수신 세기의 지속적 증가 추세를 분석하여 정차/통과 차량 제외</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-700 text-cyan-400 shrink-0">
+              <i class="fa-solid fa-microchip text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 sm:p-5 rounded-2xl border transition hover:scale-[1.005] bg-emerald-950/40 border-emerald-800/60">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start space-x-3.5">
+              <span class="text-2xl font-black text-emerald-400 font-mono shrink-0">04</span>
+              <div>
+                <h3 class="text-base font-bold text-white">하단 대기자 & 횡단자 동시 검지</h3>
+                <p class="text-xs text-slate-400 mt-0.5">무의미한 헛경고 방지 필수 조건</p>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">우회전 횡단보도 상 보행자 및 하단 대기공간 보행자(A·B·C)가 실제 존재하는지 센서로 확인합니다.</p>
+                <div class="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700 text-[11px] text-cyan-300">
+                  <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                  <span>보행자가 없는 시간대에는 음향을 억제하여 주택가 민원 및 둔감화 예방</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-700 text-emerald-400 shrink-0">
+              <i class="fa-solid fa-users text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 sm:p-5 rounded-2xl border transition hover:scale-[1.005] bg-purple-950/40 border-purple-800/60">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start space-x-3.5">
+              <span class="text-2xl font-black text-purple-400 font-mono shrink-0">05</span>
+              <div>
+                <h3 class="text-base font-bold text-white">보행자 경고 출력 (빛 + 고정문자 + 음향 + 앱)</h3>
+                <p class="text-xs text-slate-400 mt-0.5">횡단보도 및 하단 대기 보행자 시각/청각/촉각 알림</p>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">코너 장치의 LED 표시와 광 표출부가 점등되며, 광대역 과도음 및 소음연동 음압 제어로 음향 경고가 울립니다. 앱 사용자에게는 팝업과 진동을 전달합니다.</p>
+                <div class="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700 text-[11px] text-cyan-300">
+                  <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                  <span>고령 보행자도 잔존 청력과 방향감으로 인지 가능한 광대역 반복음 채택</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-700 text-purple-400 shrink-0">
+              <i class="fa-solid fa-volume-high text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 sm:p-5 rounded-2xl border transition hover:scale-[1.005] bg-slate-900 border-slate-700">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start space-x-3.5">
+              <span class="text-2xl font-black text-emerald-400 font-mono shrink-0">06</span>
+              <div>
+                <h3 class="text-base font-bold text-white">우회전 완료 및 레버 자동 복귀 검출</h3>
+                <p class="text-xs text-slate-400 mt-0.5">시스템 자동 중단 신호 발신</p>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">4거리 교차로 우회전 선회 완료 후 스티어링 휠이 원위치되면서 레버가 자동 복귀되면 차량 단말이 해제 신호를 발신합니다.</p>
+                <div class="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700 text-[11px] text-cyan-300">
+                  <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                  <span>노변 장치가 해제 신호를 받으면 즉시 경고 출력을 정지하고 초기 대기 상태로 전환</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-700 text-emerald-400 shrink-0">
+              <i class="fa-solid fa-circle-check text-xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: COMPARISON & ADVANTAGES -->
+    <section id="tab-comparison" class="tab-content hidden space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+          <i class="fa-solid fa-bolt text-cyan-400"></i>
+          <span>기존 기술 한계 극복 및 행정적 수속 우위</span>
+        </h2>
+        <p class="text-slate-400 text-sm mt-1">
+          왜 차량 검지 방식이나 영상 관측 방식이 아닌 '의도 직접 인식' 방식이어야 하는가?
+        </p>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+        <div class="p-4 bg-slate-900 border-b border-slate-700 font-bold text-slate-200 text-sm flex items-center justify-between">
+          <span>교차로 우회전 감지 방식별 비교 분석</span>
+          <span class="text-xs text-cyan-400 font-normal">ITS뱅크 제안 기술 우위</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-900/60 border-b border-slate-700 text-slate-400">
+                <th class="p-3.5 font-semibold">구분</th>
+                <th class="p-3.5 font-semibold">영상 / 레이더 검지 방식</th>
+                <th class="p-3.5 font-semibold">등화(방향지시등) 관측 방식</th>
+                <th class="p-3.5 font-semibold text-cyan-400 bg-cyan-950/30">본 제안 방식 (의도 직접 인식)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/60 text-slate-300">
+              <tr>
+                <td class="p-3.5 font-bold text-white">직진 차량 오경보</td>
+                <td class="p-3.5 text-red-400">심함 (직진 차량에도 경고 발발)</td>
+                <td class="p-3.5 text-amber-400">발생 가능 (차로 변경 차등)</td>
+                <td class="p-3.5 text-emerald-400 font-bold bg-cyan-950/20">없음 (우회전 의도 차량만 발신)</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white">반응 및 경고 속도</td>
+                <td class="p-3.5 text-slate-400">검지 구역 진입 후 분석 소요</td>
+                <td class="p-3.5 text-red-400">1~2초 지연 (점멸 주기 관측 필요)</td>
+                <td class="p-3.5 text-emerald-400 font-bold bg-cyan-950/20">즉시 (레버 조작 순간 전송)</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white">비상점멸등 구별</td>
+                <td class="p-3.5 text-slate-400">구별 불가</td>
+                <td class="p-3.5 text-red-400">구별 불가 (좌우 동시 점멸 모호)</td>
+                <td class="p-3.5 text-emerald-400 font-bold bg-cyan-950/20">완벽 구별 (레버 미조작으로 제외)</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white">경고의 실효성</td>
+                <td class="p-3.5 text-red-400">무의미한 경고 반복으로 둔감화</td>
+                <td class="p-3.5 text-slate-400">경고 지연으로 보행자 반응 늦음</td>
+                <td class="p-3.5 text-emerald-400 font-bold bg-cyan-950/20">높음 (필요한 순간에만 경고)</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white">차량 부담/개조</td>
+                <td class="p-3.5 text-slate-400">없음 (외부 카메라/레이더)</td>
+                <td class="p-3.5 text-slate-400">없음 (외부 카메라)</td>
+                <td class="p-3.5 text-emerald-400 font-bold bg-cyan-950/20">없음 (무배선, 간이 부착식)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Administrative Advantage Banner -->
+      <div class="bg-gradient-to-r from-blue-950 via-slate-800 to-cyan-950 border border-cyan-500/30 rounded-2xl p-6 space-y-4">
+        <div class="flex items-center space-x-2 text-cyan-400 font-bold text-base">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>사업 추진 상의 절차 위험 제로 (임기 내 완결 보장)</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/80">
+            <h4 className="font-bold text-red-400 mb-2">❌ 타 스마트교통 요소 (절차 지연 위험)</h4>
+            <p class="text-slate-300">
+              신호제어 연동, 우회전 신호등 신설, 단속 연계, 관제 데이터 공유 등은 <strong class="text-white">경찰청 협의 및 교통안전시설 심의, 표준규격 절차</strong>를 거쳐야 하여 사업 기한 통제가 어렵습니다.
+            </p>
+          </div>
+
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-cyan-500/40">
+            <h4 className="font-bold text-cyan-300 mb-2">✅ 본 보행안전지원 시스템 (구 단독 완결)</h4>
+            <p class="text-slate-300">
+              신호제어기와 미연결, 신호주 미사용, 태양광 독립전원으로 동작하므로 심의 절차가 없습니다. <strong class="text-cyan-300">송파구가 설계 시점에 결정하면 구축 시점에 준공</strong>됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Company Footer Card -->
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <div class="flex items-center space-x-3">
+          <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700">
+            <i class="fa-solid fa-building text-slate-300 text-lg"></i>
+          </div>
+          <div>
+            <div class="font-bold text-white text-sm">㈜아이티에스뱅크 (Since 2001)</div>
+            <div>스마트 교통안전 제품 기획·개발·생산·시공·유지관리 직접 수행</div>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4 shrink-0 text-slate-300">
+          <div>Tel. 031-944-7967</div>
+          <div>www.itsbank.net</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    // Application Global State
+    let state = {
+      activeTab: 'simulation',
+      simStep: 0,
+      isPlaying: false,
+      leverActivated: false,
+      pedestrianPresent: true,
+      soundEnabled: true,
+      vibrationEnabled: true,
+      pedestrianStatus: 'standing', // 'walking', 'standing', 'warning'
+      headsetMode: true,
+      accessibilityMode: false,
+      selectedVehicleType: 'bus', // 'bus', 'school_bus', 'truck'
+      isVibrating: false
+    };
+
+    // Auto Play Interval Timer
+    let autoPlayTimer = null;
+    let audioCtx = null;
+
+    // Vehicle Positions & Rotations for 7 Simulation Steps
+    const vehicleTransforms = [
+      "translate(325, 360) rotate(0)",   // Step 0: Standby
+      "translate(325, 280) rotate(0)",   // Step 1: Lever Activated
+      "translate(325, 240) rotate(0)",   // Step 2: RF Signal Transmitting
+      "translate(340, 215) rotate(35)",  // Step 3: Directional Receiver Catch
+      "translate(380, 225) rotate(75)",  // Step 4: Crosswalk & Pedestrian Check
+      "translate(415, 235) rotate(90)",  // Step 5: Active Warning Beam & Audio Output
+      "translate(570, 235) rotate(90)"   // Step 6: Turn Complete & Auto Lever Reset
+    ];
+
+    // Pedestrian C & D Positions per Step
+    const pedCPositions = [
+      "translate(460, 250)", "translate(460, 250)", "translate(460, 220)",
+      "translate(460, 195)", "translate(460, 175)", "translate(460, 160)", "translate(460, 140)"
+    ];
+    const pedDPositions = [
+      "translate(448, 150)", "translate(448, 150)", "translate(448, 175)",
+      "translate(448, 200)", "translate(448, 225)", "translate(448, 240)", "translate(448, 260)"
+    ];
+
+    // Tab Switching Function
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      // Update Desktop Buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-1.5';
+      });
+      const activeDesktopBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeDesktopBtn) {
+        if (tabId === 'pedestrianApp') {
+          activeDesktopBtn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20';
+        } else if (tabId === 'vehicleApp') {
+          activeDesktopBtn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20';
+        } else {
+          activeDesktopBtn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20';
+        }
+      }
+
+      // Update Mobile Buttons
+      document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+        btn.className = 'mobile-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 whitespace-nowrap';
+      });
+      const activeMobileBtn = document.getElementById(`mobile-tab-${tabId}`);
+      if (activeMobileBtn) {
+        activeMobileBtn.className = 'mobile-tab-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-cyan-500 text-slate-950';
+      }
+    }
+
+    // Toggle Auto Simulation Loop
+    function toggleAutoPlay() {
+      state.isPlaying = !state.isPlaying;
+      const btnText = document.getElementById('auto-play-text');
+      const btnIcon = document.getElementById('auto-play-icon');
+      const btn = document.getElementById('auto-play-btn');
+
+      if (state.isPlaying) {
+        btnText.innerText = '일시정지';
+        btnIcon.className = 'fa-solid fa-pause';
+        btn.className = 'px-4 py-2.5 rounded-xl font-bold text-sm flex items-center space-x-2 transition shadow-lg bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20';
+        
+        autoPlayTimer = setInterval(() => {
+          let nextStep = state.simStep + 1;
+          if (nextStep > 6) {
+            nextStep = 0;
+            state.isPlaying = false;
+            clearInterval(autoPlayTimer);
+            btnText.innerText = '자동 시뮬레이션';
+            btnIcon.className = 'fa-solid fa-play';
+            btn.className = 'px-4 py-2.5 rounded-xl font-bold text-sm flex items-center space-x-2 transition shadow-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20';
+          }
+          setSimStep(nextStep);
+        }, 2300);
+      } else {
+        clearInterval(autoPlayTimer);
+        btnText.innerText = '자동 시뮬레이션';
+        btnIcon.className = 'fa-solid fa-play';
+        btn.className = 'px-4 py-2.5 rounded-xl font-bold text-sm flex items-center space-x-2 transition shadow-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20';
+      }
+    }
+
+    // Reset Simulation
+    function resetSimulation() {
+      if (state.isPlaying) {
+        toggleAutoPlay();
+      }
+      state.leverActivated = false;
+      state.pedestrianStatus = 'standing';
+      setSimStep(0);
+    }
+
+    // Manual Lever Toggle
+    function toggleManualLever() {
+      state.leverActivated = !state.leverActivated;
+      if (state.leverActivated) {
+        setSimStep(1);
+        playWarningBeep("우회전 횡단보도와 대기공간에 보행자가 존재합니다. 일시정지 하세요.");
+      } else {
+        setSimStep(0);
+        state.pedestrianStatus = 'standing';
+      }
+      updateUI();
+    }
+
+    // Set Step Logic
+    function setSimStep(step) {
+      state.simStep = step;
+      state.leverActivated = (step >= 1 && step <= 5);
+
+      if (step === 5 && state.pedestrianPresent) {
+        state.pedestrianStatus = 'warning';
+        playWarningBeep("위험! 우회전 차량 접근 중입니다. 횡단보도와 하단 대기공간 보행자는 주의하세요.");
+        triggerVibration();
+      } else if (step === 0) {
+        state.pedestrianStatus = 'standing';
+      }
+      updateUI();
+    }
+
+    // Toggle Sound
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      const btn = document.getElementById('sound-toggle-btn');
+      const text = document.getElementById('sound-toggle-text');
+      const icon = document.getElementById('sound-toggle-icon');
+
+      if (state.soundEnabled) {
+        btn.className = 'p-1.5 rounded-xl border text-xs transition flex items-center space-x-1 bg-cyan-950 border-cyan-700 text-cyan-300';
+        text.innerText = '음향 ON';
+        icon.className = 'fa-solid fa-volume-high';
+      } else {
+        btn.className = 'p-1.5 rounded-xl border text-xs transition flex items-center space-x-1 bg-slate-900 border-slate-700 text-slate-500';
+        text.innerText = '음향 OFF';
+        icon.className = 'fa-solid fa-volume-xmark';
+      }
+    }
+
+    // Toggle Vibration
+    function toggleVibration() {
+      state.vibrationEnabled = !state.vibrationEnabled;
+      const btn = document.getElementById('vibe-toggle-btn');
+      const text = document.getElementById('vibe-toggle-text');
+
+      if (state.vibrationEnabled) {
+        btn.className = 'p-1.5 rounded-xl border text-xs transition flex items-center space-x-1 bg-purple-950 border-purple-700 text-purple-300';
+        text.innerText = '진동 ON';
+      } else {
+        btn.className = 'p-1.5 rounded-xl border text-xs transition flex items-center space-x-1 bg-slate-900 border-slate-700 text-slate-500';
+        text.innerText = '진동 OFF';
+      }
+    }
+
+    // Toggle Pedestrian Presence
+    function togglePedestrianPresence() {
+      state.pedestrianPresent = !state.pedestrianPresent;
+      const btn = document.getElementById('ped-presence-btn');
+      const text = document.getElementById('ped-presence-text');
+      const group = document.getElementById('svg-pedestrians-group');
+
+      if (state.pedestrianPresent) {
+        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border transition flex items-center space-x-1.5 bg-emerald-950 text-emerald-400 border-emerald-700/80';
+        text.innerText = '보행자 감지: 하단 대기+횡단 중 (경고)';
+        group.setAttribute('opacity', '1');
+      } else {
+        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border transition flex items-center space-x-1.5 bg-slate-900 text-slate-400 border-slate-700';
+        text.innerText = '보행자: 없음 (경고 억제)';
+        group.setAttribute('opacity', '0.2');
+      }
+      updateUI();
+    }
+
+    // Audio Player (Web Audio API + TTS)
+    function playWarningBeep(message) {
+      if (!state.soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc1.type = 'sawtooth';
+        osc2.type = 'square';
+        osc1.frequency.setValueAtTime(880, now);
+        osc2.frequency.setValueAtTime(1760, now);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 0.45);
+        osc2.stop(now + 0.45);
+
+        if ('speechSynthesis' in window && message) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(message);
+          utterance.lang = 'ko-KR';
+          utterance.rate = 1.15;
+          window.speechSynthesis.speak(utterance);
+        }
+      } catch (e) {
+        console.log('Audio playback constrained', e);
+      }
+    }
+
+    // Vibration Player
+    function triggerVibration() {
+      if (!state.vibrationEnabled) return;
+      
+      const container = document.getElementById('sim-canvas-container');
+      const pedPhoneShell = document.getElementById('ped-phone-shell');
+      container.classList.add('shake-animation');
+      if (pedPhoneShell) pedPhoneShell.classList.add('shake-animation');
+
+      if ('navigator' in window && navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 350]);
+      }
+
+      setTimeout(() => {
+        container.classList.remove('shake-animation');
+        if (pedPhoneShell) pedPhoneShell.classList.remove('shake-animation');
+      }, 1200);
+    }
+
+    // Pedestrian App Settings Controls
+    function setPedestrianStatus(status) {
+      state.pedestrianStatus = status;
+      if (status === 'warning') {
+        playWarningBeep("위험! 우회전 차량 접근 중입니다. 횡단보도와 하단 대기공간에서 물러서세요.");
+        triggerVibration();
+      }
+      updateUI();
+    }
+
+    function toggleHeadsetMode() {
+      state.headsetMode = !state.headsetMode;
+      document.getElementById('headset-status').innerText = state.headsetMode ? 'ON' : 'OFF';
+      document.getElementById('headset-btn').className = state.headsetMode 
+        ? 'p-2 rounded-xl border flex items-center justify-between bg-cyan-950 border-cyan-700 text-cyan-300' 
+        : 'p-2 rounded-xl border flex items-center justify-between bg-slate-800 border-slate-700 text-slate-500';
+      updatePedestrianPhoneUI();
+    }
+
+    function toggleAccessibilityMode() {
+      state.accessibilityMode = !state.accessibilityMode;
+      document.getElementById('access-status').innerText = state.accessibilityMode ? 'ON' : 'OFF';
+      document.getElementById('access-btn').className = state.accessibilityMode 
+        ? 'p-2 rounded-xl border flex items-center justify-between bg-amber-950 border-amber-700 text-amber-300' 
+        : 'p-2 rounded-xl border flex items-center justify-between bg-slate-800 border-slate-700 text-slate-500';
+      updatePedestrianPhoneUI();
+    }
+
+    // Vehicle Type Selection
+    function selectVehicleType(type) {
+      state.selectedVehicleType = type;
+      document.querySelectorAll('[id^="veh-card-"]').forEach(el => {
+        el.className = 'p-3 rounded-xl border cursor-pointer transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700';
+      });
+      document.getElementById(`veh-card-${type}`).className = 'p-3 rounded-xl border cursor-pointer transition bg-amber-950/70 border-amber-500 text-amber-200 font-semibold';
+
+      const titleEl = document.getElementById('veh-type-title');
+      const iconBox = document.getElementById('veh-type-icon-box');
+
+      if (type === 'bus') {
+        titleEl.innerText = '서울특별시 노선버스 (송파 301번)';
+        iconBox.innerHTML = '<i class="fa-solid fa-bus text-lg"></i>';
+      } else if (type === 'school_bus') {
+        titleEl.innerText = '어린이 통학버스 (관내 유치원)';
+        iconBox.innerHTML = '<i class="fa-solid fa-graduation-cap text-lg"></i>';
+      } else if (type === 'truck') {
+        titleEl.innerText = '대형 화물 운송 차량 (25톤)';
+        iconBox.innerHTML = '<i class="fa-solid fa-truck-front text-lg"></i>';
+      }
+    }
+
+    // Update UI Elements across state changes
+    function updateUI() {
+      // Step Numbers & Descs
+      document.getElementById('sim-step-num').innerText = state.simStep;
+      const stepTexts = [
+        "대기 상태 (차량 남측 차로 접근 중)",
+        "1단계: 운전자 우회전 방향지시 레버 올림",
+        "2단계: 차량 단말 → 전방 RF 무선 신호 발신",
+        "3단계: 우회전 코너 노변장치 신호 지향 수신",
+        "4단계: 하단 횡단대기자 & 횡단보도 보행자 동시 검지",
+        "5단계: [경고] 코너 빛·음향 & 하단대기자/횡단자 앱 경고",
+        "6단계: 우회전 완료 후 레버 자동 복귀 (알림 종료)"
+      ];
+      document.getElementById('sim-step-text').innerText = stepTexts[state.simStep];
+
+      // Lever Badges
+      const leverBadge = document.getElementById('lever-badge');
+      if (state.leverActivated) {
+        leverBadge.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-950 text-amber-400 border border-amber-800';
+        leverBadge.innerText = '우회전 레버: ON';
+      } else {
+        leverBadge.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-400';
+        leverBadge.innerText = '우회전 레버: OFF';
+      }
+
+      // Manual Lever Button Text
+      const manualBtn = document.getElementById('manual-lever-btn');
+      const driverTabBtn = document.getElementById('driver-tab-lever-btn');
+      if (state.leverActivated) {
+        manualBtn.innerText = '레버 해제';
+        manualBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition shadow bg-amber-500 text-slate-950 hover:bg-amber-400';
+        if (driverTabBtn) {
+          driverTabBtn.innerText = '레버 복귀 (우회전 완료)';
+          driverTabBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition shadow bg-amber-500 text-slate-950 hover:bg-amber-400';
+        }
+      } else {
+        manualBtn.innerText = '우회전 레버 올려보기';
+        manualBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition shadow bg-slate-700 text-slate-200 hover:bg-slate-600';
+        if (driverTabBtn) {
+          driverTabBtn.innerText = '우회전 레버 올려보기';
+          driverTabBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition shadow bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700';
+        }
+      }
+
+      // Update SVG Vehicle Transform
+      const svgVehicle = document.getElementById('svg-vehicle');
+      svgVehicle.setAttribute('transform', vehicleTransforms[state.simStep]);
+
+      // Roof Ping & Turn Lamp
+      const roofPing = document.getElementById('svg-veh-roof-ping');
+      const turnLamp = document.getElementById('svg-turn-lamp');
+      const turnLampPing = document.getElementById('svg-turn-lamp-ping');
+      const rfWaves = document.getElementById('svg-rf-waves');
+
+      if (state.leverActivated) {
+        roofPing.setAttribute('fill', '#f59e0b');
+        roofPing.setAttribute('class', 'animate-ping');
+        turnLamp.setAttribute('fill', '#f59e0b');
+        turnLamp.setAttribute('class', 'animate-pulse');
+        turnLampPing.setAttribute('opacity', '0.4');
+        turnLampPing.setAttribute('class', 'animate-ping');
+      } else {
+        roofPing.setAttribute('fill', '#475569');
+        roofPing.removeAttribute('class');
+        turnLamp.setAttribute('fill', '#334155');
+        turnLamp.removeAttribute('class');
+        turnLampPing.setAttribute('opacity', '0');
+        turnLampPing.removeAttribute('class');
+      }
+
+      // RF Waves (Steps 2 to 5)
+      if (state.simStep >= 2 && state.simStep <= 5 && state.leverActivated) {
+        rfWaves.setAttribute('opacity', '1');
+      } else {
+        rfWaves.setAttribute('opacity', '0');
+      }
+
+      // Pedestrians C & D Movement
+      document.getElementById('svg-ped-c').setAttribute('transform', pedCPositions[state.simStep]);
+      document.getElementById('svg-ped-d').setAttribute('transform', pedDPositions[state.simStep]);
+
+      const pedCAlert = document.getElementById('svg-ped-c-alert');
+      const pedCHead = document.getElementById('svg-ped-c-head');
+      const pedCBody = document.getElementById('svg-ped-c-body');
+      const pedCText = document.getElementById('svg-ped-c-text');
+
+      if (state.simStep === 5 && state.pedestrianPresent) {
+        pedCAlert.setAttribute('opacity', '0.3');
+        pedCHead.setAttribute('fill', '#ef4444');
+        pedCBody.setAttribute('fill', '#ef4444');
+        pedCText.innerText = '⚠️ 횡단 중 위험!';
+      } else {
+        pedCAlert.setAttribute('opacity', '0');
+        pedCHead.setAttribute('fill', '#f59e0b');
+        pedCBody.setAttribute('fill', '#f59e0b');
+        pedCText.innerText = '🚶 횡단보도 건너는 중';
+      }
+
+      // Warning Flash Effect Group (Step 5)
+      const warningGroup = document.getElementById('svg-warning-effect-group');
+      if (state.simStep === 5 && state.pedestrianPresent) {
+        warningGroup.setAttribute('opacity', '1');
+      } else {
+        warningGroup.setAttribute('opacity', '0');
+      }
+
+      // Step Timeline Nav Items Highlight
+      document.querySelectorAll('.step-nav-item').forEach((el, idx) => {
+        const stepNum = idx + 1;
+        const badge = el.querySelector('.step-num-badge');
+        const arrow = el.querySelector('.nav-arrow');
+
+        if (state.simStep === stepNum) {
+          el.className = 'step-nav-item p-2 rounded-xl border border-cyan-500 bg-cyan-950/80 text-cyan-200 font-semibold text-xs cursor-pointer transition flex items-center justify-between';
+          badge.className = 'step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-cyan-500 text-slate-950';
+          if (arrow) arrow.classList.remove('hidden');
+        } else if (state.simStep > stepNum) {
+          el.className = 'step-nav-item p-2 rounded-xl border border-slate-700/60 bg-slate-900/50 text-slate-400 text-xs cursor-pointer transition flex items-center justify-between';
+          badge.className = 'step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-slate-800 text-slate-400';
+          if (arrow) arrow.classList.add('hidden');
+        } else {
+          el.className = 'step-nav-item p-2 rounded-xl border border-slate-800 bg-slate-900/30 text-slate-500 hover:border-slate-700 text-xs cursor-pointer transition flex items-center justify-between';
+          badge.className = 'step-num-badge w-4 h-4 rounded-full flex items-center justify-center font-bold text-[9px] bg-slate-800 text-slate-400';
+          if (arrow) arrow.classList.add('hidden');
+        }
+      });
+
+      // Update Phone Previews & Driver HUD
+      updateMiniPhoneUI();
+      updatePedestrianPhoneUI();
+      updateDriverHUD();
+    }
+
+    // Mini Phone UI inside Simulator Tab
+    function updateMiniPhoneUI() {
+      const container = document.getElementById('sim-mini-phone-content');
+      const phoneShell = document.getElementById('sim-mini-phone');
+
+      if (state.simStep === 5 && state.pedestrianPresent) {
+        phoneShell.className = 'bg-slate-950 rounded-2xl border-4 border-amber-500 p-3 relative overflow-hidden transition-all duration-300 shadow-lg shadow-amber-500/20';
+        container.innerHTML = `
+          <div class="bg-gradient-to-b from-amber-950 to-red-950 border border-amber-500 rounded-xl p-3 text-center space-y-2 animate-pulse">
+            <div class="inline-flex p-2 bg-amber-500 text-slate-950 rounded-full font-bold">
+              <i class="fa-solid fa-triangle-exclamation text-base animate-bounce"></i>
+            </div>
+            <div class="text-xs font-extrabold text-amber-200">⚠️ 우회전 차량 접근 위험!</div>
+            <p class="text-[10px] text-amber-100 leading-tight">
+              대형 우회전 버스/화물차가 접근 중입니다. 하단 대기공간 및 횡단보도에서 뒤로 물러서세요.
+            </p>
+            <div class="text-[9px] bg-amber-900/80 text-amber-300 py-1 rounded font-mono">
+              📳 음성 안내 + 진동 파동 작동 중
+            </div>
+          </div>
+        `;
+      } else {
+        phoneShell.className = 'bg-slate-950 rounded-2xl border-4 border-slate-700 p-3 relative overflow-hidden transition-all duration-300';
+        container.innerHTML = `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center space-y-1.5">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <div class="text-xs font-bold text-slate-200">하단 대기공간 & 횡단보도 감지 구역</div>
+            <p class="text-[10px] text-slate-400">
+              ${state.pedestrianPresent ? '하단 횡단대기자(A·B·C) 및 횡단보도 보행자 감지 완료' : '대기 보행자 없음 (스마트 오알림 억제 모드)'}
+            </p>
+          </div>
+        `;
+      }
+    }
+
+    // Main Pedestrian App Mockup Screen
+    function updatePedestrianPhoneUI() {
+      const container = document.getElementById('ped-app-screen-body');
+      if (!container) return;
+
+      const btnWalking = document.getElementById('btn-ped-status-walking');
+      const btnStanding = document.getElementById('btn-ped-status-standing');
+      const btnWarning = document.getElementById('btn-ped-status-warning');
+
+      if (btnWalking && btnStanding && btnWarning) {
+        btnWalking.className = state.pedestrianStatus === 'walking'
+          ? 'p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-slate-700 border-cyan-500 text-white'
+          : 'p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700';
+
+        btnStanding.className = state.pedestrianStatus === 'standing'
+          ? 'p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-emerald-950 border-emerald-500 text-emerald-300'
+          : 'p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700';
+
+        btnWarning.className = state.pedestrianStatus === 'warning'
+          ? 'p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20'
+          : 'p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center space-y-1.5 bg-slate-900 border-slate-800 text-amber-400 hover:border-amber-700';
+      }
+
+      if (state.pedestrianStatus === 'walking') {
+        container.innerHTML = `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-center space-y-3">
+            <div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-400">
+              <i class="fa-solid fa-users text-xl animate-pulse"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-slate-200">일반 보행 이동 중 감지</div>
+              <div class="text-xs text-slate-400 mt-1">스마트 오알림 억제 기술 작동 중</div>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+              💡 교차로 하단 대기공간에 정지하거나 횡단보도 진입 시 신호 수신 모드로 자동 전환됩니다.
+            </p>
+          </div>
+        `;
+      } else if (state.pedestrianStatus === 'standing') {
+        container.innerHTML = `
+          <div class="bg-emerald-950/40 border border-emerald-700/60 rounded-2xl p-5 text-center space-y-3">
+            <div class="w-12 h-12 bg-emerald-900/60 border border-emerald-500 rounded-full flex items-center justify-center mx-auto text-emerald-400">
+              <i class="fa-solid fa-circle-check text-xl"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-emerald-200">하단 대기공간 정지 및 횡단 감지</div>
+              <div class="text-xs text-emerald-400/80 mt-1">우회전 차로 감시 모드 활성화</div>
+            </div>
+            <div class="text-[11px] text-slate-300 bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-tower-broadcast text-cyan-400 animate-pulse"></i>
+              <span>노변 알림장치 무선 수신 대기 중</span>
+            </div>
+          </div>
+        `;
+      } else if (state.pedestrianStatus === 'warning') {
+        const themeClass = state.accessibilityMode
+          ? 'bg-amber-400 text-slate-950 border-4 border-red-600'
+          : 'bg-gradient-to-b from-amber-950 to-red-950 border-2 border-amber-500 text-white';
+
+        const textClass = state.accessibilityMode ? 'text-slate-900' : 'text-amber-200';
+
+        const headsetBanner = state.headsetMode ? `
+          <div class="bg-slate-900 text-cyan-300 border border-cyan-500/60 p-2 rounded-xl text-[10px] flex items-center justify-center space-x-1">
+            <i class="fa-solid fa-headphones text-cyan-400"></i>
+            <span>이어폰 착용자 대형 헤드업 알림 팝업</span>
+          </div>
+        ` : '';
+
+        container.innerHTML = `
+          <div class="rounded-2xl p-5 text-center space-y-3 transition-all ${themeClass}">
+            <div class="w-14 h-14 bg-amber-500 text-slate-950 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-amber-500/40 animate-bounce">
+              <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+            </div>
+            <div>
+              <div class="text-base font-black tracking-tight">⚠️ 우회전 대형차량 접근 위험!</div>
+              <div class="text-xs mt-1 font-semibold ${textClass}">횡단보도 및 하단 대기공간 뒤로 물러서세요!</div>
+            </div>
+
+            ${headsetBanner}
+
+            <div class="pt-2 border-t border-amber-500/40 space-y-1">
+              <div class="text-[10px] font-mono flex items-center justify-center space-x-1">
+                <i class="fa-solid fa-volume-high text-amber-300"></i>
+                <span>음성 안내: "위험! 우회전 차량 접근 중입니다"</span>
+              </div>
+              <div class="text-[10px] font-mono flex items-center justify-center space-x-1">
+                <i class="fa-solid fa-mobile-retro text-purple-300"></i>
+                <span>진동 패턴: 200ms-100ms-200ms-350ms</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Driver Terminal HUD UI
+    function updateDriverHUD() {
+      const hudPing = document.getElementById('hud-lever-ping');
+      const hudStatusText = document.getElementById('hud-lever-status-text');
+      const hudRfText = document.getElementById('hud-rf-status-text');
+      const alertBanner = document.getElementById('driver-alert-banner');
+      const screen = document.getElementById('driver-hud-screen');
+
+      if (!hudPing || !hudStatusText) return;
+
+      if (state.leverActivated) {
+        screen.className = 'p-6 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/60 border-amber-500 shadow-xl shadow-amber-950/50';
+        hudPing.className = 'w-3 h-3 rounded-full bg-amber-400 animate-ping';
+        hudStatusText.innerText = '우회전 레버 작동 감지 (ON)';
+        hudRfText.innerText = '📡 전방 노변장치향 RF 신호 송출 중';
+
+        alertBanner.innerHTML = `
+          <div class="bg-amber-500/20 border border-amber-500 p-4 rounded-xl space-y-2 animate-pulse">
+            <div class="flex items-center justify-between text-amber-300 font-bold text-xs">
+              <span class="flex items-center space-x-1.5">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+                <span>[운전자 안내] 하단 횡단대기자 및 횡단보도 보행자 감지</span>
+              </span>
+              <span class="text-[10px] bg-amber-950 px-2 py-0.5 rounded border border-amber-700">서행 및 일시정지 준수</span>
+            </div>
+            <p class="text-xs text-slate-200 leading-relaxed">
+              노변 알림장치로 우회전 신호가 전달되었습니다. 횡단보도 상 보행자 및 하단 대기공간 보행자(A·B·C)가 존재하므로 **일시정지 후 서행 선회**하세요.
+            </p>
+          </div>
+        `;
+      } else {
+        screen.className = 'p-6 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden bg-slate-950 border-slate-800';
+        hudPing.className = 'w-3 h-3 rounded-full bg-slate-700';
+        hudStatusText.innerText = '중립 / 레버 미조작 (OFF)';
+        hudRfText.innerText = '💤 신호 송출 대기 중';
+
+        alertBanner.innerHTML = `
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+            <span>우회전 시 레버를 올리면 노변장치로 무선 신호가 자동 송출됩니다.</span>
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+          </div>
+        `;
+      }
+    }
+
+    // Initial Page Load Initialization
+    window.onload = function() {
+      updateUI();
+    };
+  </script>
+</body>
+</html>

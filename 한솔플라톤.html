@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>한솔 플라톤 팜스프링 아카데미</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: 'Noto Sans KR', 'Inter', sans-serif;
+        scroll-behavior: smooth;
+        padding-bottom: 90px;
+      }
+      .glass-morphism {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+      }
+      .fade-in {
+        animation: fadeIn 0.6s ease-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .modal-bg {
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+      }
+      .price-tag {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 overflow-x-hidden">
+    <!-- Header -->
+    <header
+      id="home"
+      class="max-w-md mx-auto pt-8 px-6 mb-6 fade-in flex items-center justify-between"
+    >
+      <div>
+        <h1
+          class="text-2xl font-black text-slate-900 tracking-tighter leading-none mb-1"
+        >
+          한솔 플라톤
+        </h1>
+        <p class="text-blue-600 font-bold text-sm">팜스프링 아카데미</p>
+      </div>
+      <a
+        href="tel:010-8841-0008"
+        class="w-12 h-12 bg-white shadow-sm border border-slate-100 rounded-2xl flex items-center justify-center text-blue-600 active:scale-90 transition"
+      >
+        <i class="fa-solid fa-phone"></i>
+      </a>
+    </header>
+
+    <main class="max-w-md mx-auto px-6">
+      <!-- [위기 진단] 인포그래픽 기반 섹션 -->
+      <section class="mb-10">
+        <h3 class="text-lg font-extrabold mb-4 flex items-center gap-2">
+          <span class="w-1.5 h-6 bg-red-500 rounded-full"></span>
+          지금 왜 '문해력' 인가요?
+        </h3>
+        <div class="grid grid-cols-1 gap-4">
+          <div
+            class="bg-white p-5 rounded-[2rem] border-l-4 border-blue-400 shadow-sm"
+          >
+            <p
+              class="text-[10px] font-bold text-blue-500 mb-1 uppercase tracking-wider"
+            >
+              AI 시대 생존 전략
+            </p>
+            <h5 class="font-bold text-base mb-1">비판적 사고력</h5>
+            <p class="text-slate-500 text-xs leading-relaxed">
+              자신의 가치를 논리적으로 표현하는 비판적 사고는 AI 시대 필수
+              능력입니다.
+            </p>
+          </div>
+          <div
+            class="bg-white p-5 rounded-[2rem] border-l-4 border-orange-400 shadow-sm"
+          >
+            <p
+              class="text-[10px] font-bold text-orange-500 mb-1 uppercase tracking-wider"
+            >
+              4학년의 위기
+            </p>
+            <h5 class="font-bold text-base mb-1">언어 절벽 극복</h5>
+            <p class="text-slate-500 text-xs leading-relaxed">
+              학습 독서 시기인 4학년부터 학생 간 언어 능력 차이가 급격히
+              벌어집니다.
+            </p>
+          </div>
+          <div
+            class="bg-white p-5 rounded-[2rem] border-l-4 border-indigo-400 shadow-sm"
+          >
+            <p
+              class="text-[10px] font-bold text-indigo-500 mb-1 uppercase tracking-wider"
+            >
+              수능 국어 대비
+            </p>
+            <h5 class="font-bold text-base mb-1">내재적 읽기 능력</h5>
+            <p class="text-slate-500 text-xs leading-relaxed">
+              방대한 지문을 이해하는 힘은 결국 내재된 읽기 능력과 문해력에 달려
+              있습니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- [해결책] 플라톤의 강화법 -->
+      <section
+        class="mb-10 bg-blue-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-100 relative overflow-hidden"
+      >
+        <div
+          class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full"
+        ></div>
+        <h3 class="text-xl font-bold mb-6">플라톤의 '내재적 능력' 강화법</h3>
+        <ul class="space-y-6">
+          <li class="flex gap-4">
+            <div
+              class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0"
+            >
+              <i class="fa-solid fa-book"></i>
+            </div>
+            <div>
+              <h6 class="font-bold text-sm">월 4권, 연간 48권의 몰입 독서</h6>
+              <p
+                class="text-blue-100 text-[11px] mt-1 leading-relaxed text-balance"
+              >
+                단계별 발달에 맞춘 독서로 학교 수업 자신감을 높이고 꾸준한
+                습관을 만듭니다.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-4">
+            <div
+              class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0"
+            >
+              <i class="fa-solid fa-comments"></i>
+            </div>
+            <div>
+              <h6 class="font-bold text-sm">질문과 토론으로 확장하는 생각</h6>
+              <p
+                class="text-blue-100 text-[11px] mt-1 leading-relaxed text-balance"
+              >
+                플라톤식 질문과 토론, 글쓰기를 통해 아이의 생각을 논리적으로
+                완성합니다.
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- [수강 안내] 요금 및 시간표 섹션 -->
+      <section id="pricing" class="mb-12">
+        <h3
+          class="text-xl font-bold mb-6 text-slate-800 flex items-center gap-2"
+        >
+          <span class="w-1.5 h-6 bg-green-500 rounded-full"></span>
+          교육 과정 및 수강료 안내
+        </h3>
+
+        <!-- 주차별 수업 구성 -->
+        <div class="space-y-2 mb-8">
+          <div
+            class="flex items-center gap-3 bg-blue-50 p-3 rounded-2xl border border-blue-100"
+          >
+            <span
+              class="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-md"
+              >주 1회</span
+            >
+            <p class="text-xs font-bold text-blue-800">플라톤</p>
+          </div>
+          <div
+            class="flex items-center gap-3 bg-indigo-50 p-3 rounded-2xl border border-indigo-100"
+          >
+            <span
+              class="bg-indigo-600 text-white text-[10px] font-black px-2 py-1 rounded-md"
+              >주 2회</span
+            >
+            <p class="text-xs font-bold text-indigo-800">
+              플라톤 + 통합교과/한자/라이팅
+            </p>
+          </div>
+          <div
+            class="flex items-center gap-3 bg-emerald-50 p-3 rounded-2xl border border-emerald-100"
+          >
+            <span
+              class="bg-emerald-600 text-white text-[10px] font-black px-2 py-1 rounded-md"
+              >주 3회</span
+            >
+            <p class="text-xs font-bold text-emerald-800">
+              플라톤 + 한국사/역사 + 라이팅
+            </p>
+          </div>
+        </div>
+
+        <!-- 수강료 테이블 -->
+        <div
+          class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
+        >
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-100">
+                <th
+                  class="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest"
+                >
+                  프로그램
+                </th>
+                <th
+                  class="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right"
+                >
+                  수강료 (원)
+                </th>
+              </tr>
+            </thead>
+            <tbody class="text-sm divide-y divide-slate-50">
+              <tr>
+                <td class="py-4 px-4 font-bold">베이스</td>
+                <td class="py-4 px-4 text-right text-slate-600">125,000</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold">독서 1/2</td>
+                <td class="py-4 px-4 text-right text-slate-600">130,000</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold">토론 1</td>
+                <td class="py-4 px-4 text-right text-slate-600">130,000</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold">토론 2</td>
+                <td class="py-4 px-4 text-right text-slate-600">135,000</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold">논술 1</td>
+                <td class="py-4 px-4 text-right text-slate-600">140,000</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold">논술 2</td>
+                <td class="py-4 px-4 text-right text-slate-600">145,000</td>
+              </tr>
+              <tr class="bg-blue-50/30">
+                <td class="py-4 px-4 font-bold text-blue-700">중등 과정</td>
+                <td class="py-4 px-4 text-right font-bold text-blue-700">
+                  190,000
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 단과 프로그램 -->
+        <div
+          class="mt-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm"
+        >
+          <h6
+            class="text-xs font-bold text-slate-400 mb-4 tracking-widest uppercase"
+          >
+            단과/부가 프로그램
+          </h6>
+          <div class="grid grid-cols-2 gap-y-3 gap-x-6 text-[11px]">
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span>한자</span><span class="font-bold">45,000</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span>통합교과</span><span class="font-bold">50,000</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span>교과독서</span><span class="font-bold">70,000</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span>라이팅</span><span class="font-bold">55,000</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span>한국사</span><span class="font-bold">100,000</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span>역사하기</span><span class="font-bold">110,000</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-[10px] text-slate-400 mt-4 px-2 leading-relaxed italic">
+          * 매월 16일은 다음 달 교재 및 수업료 결제일입니다.<br />
+          * 개별 수업 40~50분 / 그룹 수업 60~130분 (인원별 차등)
+        </p>
+      </section>
+
+      <!-- 상담 신청 (문자 전송 기능) -->
+      <section id="contact" class="pb-12 text-slate-900">
+        <div
+          class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm"
+        >
+          <div class="text-center mb-8">
+            <h3 class="text-lg font-bold mb-1">상담 예약 신청</h3>
+            <p class="text-[11px] text-slate-400">
+              신청 완료 시 구주영 선생님께 문자가 전송됩니다.
+            </p>
+          </div>
+
+          <div id="form-body" class="space-y-4">
+            <input
+              type="text"
+              id="student_info"
+              placeholder="이름 / 학교 / 학년"
+              class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            />
+            <input
+              type="tel"
+              id="parent_tel"
+              placeholder="보호자 연락처 (010-0000-0000)"
+              class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            />
+            <textarea
+              id="note"
+              rows="2"
+              placeholder="문의사항 (예: 주 2회 독서/한자 희망)"
+              class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            ></textarea>
+
+            <button
+              id="submit_btn"
+              onclick="submitToFirestore()"
+              class="w-full bg-blue-600 text-white font-bold py-5 rounded-3xl shadow-xl shadow-blue-100 active:scale-95 transition flex items-center justify-center gap-2"
+            >
+              <span id="btn-text">신청 및 문자 발송</span>
+              <i class="fa-solid fa-paper-plane text-xs"></i>
+            </button>
+          </div>
+
+          <div id="success_body" class="hidden text-center py-10">
+            <div
+              class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl"
+            >
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <h4 class="font-bold text-xl mb-2 text-slate-800">접수 완료!</h4>
+            <p class="text-slate-500 text-xs leading-relaxed text-balance">
+              문자 전송 화면으로 연결됩니다. 발송 버튼을 꼭 눌러주세요.
+            </p>
+            <button
+              onclick="location.reload()"
+              class="mt-8 text-blue-600 font-bold text-xs underline underline-offset-4"
+            >
+              다시 신청하기
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer
+        class="py-12 text-center text-slate-400 text-[10px] border-t border-slate-100"
+      >
+        <p class="font-bold mb-1 text-slate-600">
+          한솔 플라톤 팜스프링 아카데미
+        </p>
+        <p class="mb-4 text-balance px-10">
+          경기도 파주시 팜스프링 아파트 단지 내 공부방<br />(국민 60570101251155
+          한솔교육파주지사)
+        </p>
+        <a href="tel:010-8841-0008" class="text-blue-500 font-bold"
+          >T. 010-8841-0008</a
+        >
+      </footer>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <div
+      class="fixed bottom-0 left-0 w-full z-50 glass-morphism border-t border-slate-100 px-4"
+    >
+      <div class="max-w-md mx-auto flex h-16">
+        <button
+          onclick="scrollToSection('home')"
+          class="flex-1 flex flex-col items-center justify-center gap-1 text-blue-600"
+        >
+          <i class="fa-solid fa-house"></i>
+          <span class="text-[9px] font-bold">홈</span>
+        </button>
+        <button
+          onclick="scrollToSection('pricing')"
+          class="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-blue-600 transition"
+        >
+          <i class="fa-solid fa-won-sign"></i>
+          <span class="text-[9px] font-bold">수강료</span>
+        </button>
+        <button
+          onclick="scrollToSection('contact')"
+          class="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-blue-600 transition"
+        >
+          <i class="fa-solid fa-comment-dots"></i>
+          <span class="text-[9px] font-bold">신청</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Firebase Logic -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js'
+      import {
+        getFirestore,
+        collection,
+        addDoc
+      } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
+      import {
+        getAuth,
+        signInAnonymously,
+        signInWithCustomToken
+      } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js'
+
+      const firebaseConfig = JSON.parse(__firebase_config)
+      const app = initializeApp(firebaseConfig)
+      const db = getFirestore(app)
+      const auth = getAuth(app)
+      const appId =
+        typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'
+
+      if (typeof __initial_auth_token !== 'undefined') {
+        await signInWithCustomToken(auth, __initial_auth_token)
+      } else {
+        await signInAnonymously(auth)
+      }
+
+      window.submitToFirestore = async () => {
+        const student = document.getElementById('student_info').value
+        const tel = document.getElementById('parent_tel').value
+        const note = document.getElementById('note').value
+        if (!student || !tel) {
+          alert('상담에 필요한 정보를 입력해주세요.')
+          return
+        }
+
+        const btn = document.getElementById('submit_btn')
+        btn.disabled = true
+
+        try {
+          // Save to DB
+          await addDoc(
+            collection(
+              db,
+              'artifacts',
+              appId,
+              'public',
+              'data',
+              'consultations'
+            ),
+            {
+              student_info: student,
+              parent_tel: tel,
+              note: note,
+              timestamp: new Date().toISOString()
+            }
+          )
+
+          // Open SMS App
+          const smsBody = `[한솔플라톤 팜스프링 신청]\n학생: ${student}\n연락처: ${tel}\n내용: ${note}`
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+          window.location.href = `sms:01088410008${
+            isIOS ? '&' : '?'
+          }body=${encodeURIComponent(smsBody)}`
+
+          document.getElementById('form-body').classList.add('hidden')
+          document.getElementById('success_body').classList.remove('hidden')
+        } catch (e) {
+          alert('전송 오류가 발생했습니다.')
+          btn.disabled = false
+        }
+      }
+    </script>
+
+    <script>
+      window.scrollToSection = id => {
+        if (id === 'home') window.scrollTo({ top: 0, behavior: 'smooth' })
+        else document.getElementById(id).scrollIntoView({ behavior: 'smooth' })
+      }
+    </script>
+  </body>
+</html>
